@@ -55,14 +55,16 @@ process prepare_data_root {
   executor 'local'
   
   input:
-  tuple path(ncov2010_artic_nf_analysis_dir), path(primer_scheme_dir)
+  tuple path(ncov2010_artic_nf_analysis_dir), path(primer_scheme_dir), path(metadata)
   
   output:
   path("ncov-tools-input", type: 'dir')
 
   script:
+  def metadata = metadata.name != 'NO_FILE' ? "cp ${metadata} ncov-tools-input" : ''
   """
   mkdir ncov-tools-input
+  ${metadata}
   cp ${ncov2010_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_makeConsensus/* ncov-tools-input
   cp ${ncov2010_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_readMapping/* ncov-tools-input
   cp ${ncov2010_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_trimPrimerSequences/* ncov-tools-input
@@ -91,17 +93,19 @@ process create_config_yaml {
   executor 'local'
   publishDir "${params.outdir}", pattern: "config.yaml"
   input:
-  tuple val(run_name), val(negative_control_sample)
+  tuple val(run_name), val(negative_control_sample), val(metadata)
   
   output:
   path("config.yaml")
 
   script:
+  def metadata = metadata.name != 'NO_FILE' ? "metadata: \\\"{data_root}/metadata.tsv\\\"" : ''
   """
   touch config.yml
   echo "data_root: ncov-tools-input" >> config.yaml
   echo "run_name: ${run_name}" >> config.yaml
   echo "negative_control_samples: [ \\"${negative_control_sample}\\" ]" >> config.yaml
+  echo "${metadata}" >> config.yaml
   echo "reference_genome: \\"resources/nCoV-2019.reference.fasta\\"" >> config.yaml
   echo "primer_bed: \\"resources/nCoV-2019.primer.bed\\"" >> config.yaml
   echo "bam_pattern: \\"{data_root}/{sample}.sorted.bam\\"" >> config.yaml

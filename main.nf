@@ -17,14 +17,14 @@ workflow {
   ch_ncov_tools_version = Channel.of('1.1')
   ch_run_name = Channel.of(params.run_name)
   ch_artic_analysis_dir = Channel.fromPath(params.artic_analysis_dir, type: 'dir')
-  
+  ch_metadata = Channel.fromPath(params.metadata, type: 'file')
   
   download_ncov_tools(ch_ncov_tools_version)
   download_artic_ncov2019(ch_primer_scheme_version.combine(ch_primer_scheme_name))
   index_reference_genome(download_artic_ncov2019.out)
-  prepare_data_root(ch_artic_analysis_dir.combine(download_artic_ncov2019.out))
+  prepare_data_root(ch_artic_analysis_dir.combine(download_artic_ncov2019.out).combine(ch_metadata))
   find_negative_control(prepare_data_root.out)
-  create_config_yaml(ch_run_name.combine(find_negative_control.out))
+  create_config_yaml(ch_run_name.combine(find_negative_control.out).combine(ch_metadata))
   ncov_tools(create_config_yaml.out.combine(prepare_data_root.out).combine(index_reference_genome.out).combine(download_ncov_tools.out))
   
 }
