@@ -3,7 +3,7 @@ process download_ncov_tools {
   executor 'local'
   
   input:
-  tuple val(version)
+  val(version)
   
   output:
   path("ncov-tools", type: 'dir')
@@ -91,7 +91,7 @@ process find_negative_control {
 
 process create_config_yaml {
   executor 'local'
-  publishDir "${params.outdir}", pattern: "config.yaml"
+
   input:
   tuple val(run_name), val(negative_control_sample), val(metadata)
   
@@ -125,13 +125,25 @@ process ncov_tools {
   penv 'smp'
   queue 'all.q'
 
-  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_reports/*_summary_qc.tsv"
+  publishDir "${params.outdir}", mode: 'copy', pattern: "config.yaml"
+  publishDir "${params.outdir}", mode: 'copy', pattern: "bed"
+  publishDir "${params.outdir}", mode: 'copy', pattern: "lineages"
+  publishDir "${params.outdir}", mode: 'copy', pattern: "plots"
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_analysis"
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_reports"
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_sequencing"
 
   input:
   tuple path(config_yaml), path(data_root), path(resources), path(ncov_tools)
   
   output:
-  path("qc_reports/*_summary_qc.tsv")
+  path("config.yaml")
+  path("bed")
+  path("lineages")
+  path("plots")
+  path("qc_analysis")
+  path("qc_reports")
+  path("qc_sequencing")
 
   script:
   """
