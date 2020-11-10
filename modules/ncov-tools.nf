@@ -142,7 +142,7 @@ process ncov_tools {
   path("lineages")
   path("plots")
   path("qc_analysis")
-  path("qc_reporting")
+  path("qc_reports")
   path("qc_sequencing")
 
   script:

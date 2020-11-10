@@ -13,6 +13,7 @@ A `metadata.tsv` file may be optionally provided. If it is provided, it should f
 nextflow run BCCDC-PHL/ncov-tools-nf \
   -profile conda \
   --cache ~/.conda/envs \
+  --run_name <run_name> \
   --artic_analysis_dir <output/from/ncov2019-artic-nf> \
   --outdir <ncov-tools-output> \
   [--metadata metadata.tsv]
