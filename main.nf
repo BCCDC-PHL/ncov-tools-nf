@@ -12,7 +12,7 @@ include { ncov_tools } from './modules/ncov-tools.nf'
 
 workflow {
   
-  ch_primer_scheme_version = Channel.of('1.0')
+  ch_primer_scheme_version = Channel.of(params.primer_scheme_version)
   ch_primer_scheme_name = Channel.of('V1200')
   ch_ncov_tools_version = Channel.of('1.1')
   ch_run_name = Channel.of(params.run_name)
