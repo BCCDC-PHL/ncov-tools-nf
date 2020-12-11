@@ -114,6 +114,7 @@ process create_config_yaml {
   echo "platform: illumina" >> config.yaml
   echo "bed_type: unique_amplicons" >> config.yaml
   echo "offset: 0" >> config.yaml
+  echo "completeness_threshold: ${params.completeness_threshold}" >> config.yaml
   echo "assign_lineages: true" >> config.yaml
   """
 }
