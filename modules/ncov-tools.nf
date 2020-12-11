@@ -101,7 +101,6 @@ process create_config_yaml {
   script:
   def metadata = metadata.name != 'NO_FILE' ? "metadata: \\\"{data_root}/metadata.tsv\\\"" : ''
   """
-  touch config.yml
   echo "data_root: ncov-tools-input" >> config.yaml
   echo "run_name: ${run_name}" >> config.yaml
   echo "negative_control_samples: [ \\"${negative_control_sample}\\" ]" >> config.yaml
