@@ -93,7 +93,7 @@ process create_config_yaml {
   executor 'local'
 
   input:
-  tuple val(run_name), val(negative_control_sample), val(metadata)
+  tuple val(run_name), val(negative_control_samples), val(metadata)
   
   output:
   path("config.yaml")
@@ -103,7 +103,7 @@ process create_config_yaml {
   """
   echo "data_root: ncov-tools-input" >> config.yaml
   echo "run_name: ${run_name}" >> config.yaml
-  echo "negative_control_samples: [ \\"${negative_control_sample}\\" ]" >> config.yaml
+  echo “negative_control_samples: [‘${params.negative_control_samples}']” >> config.yaml
   echo "${metadata}" >> config.yaml
   echo "reference_genome: \\"resources/nCoV-2019.reference.fasta\\"" >> config.yaml
   echo "primer_bed: \\"resources/nCoV-2019.primer.bed\\"" >> config.yaml
