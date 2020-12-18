@@ -14,7 +14,7 @@ workflow {
   
   ch_primer_scheme_version = Channel.of(params.primer_scheme_version)
   ch_primer_scheme_name = Channel.of('V1200')
-  ch_ncov_tools_version = Channel.of('1.1')
+  ch_ncov_tools_version = Channel.of(params.ncov_tools_version)
   ch_run_name = Channel.of(params.run_name)
   ch_artic_analysis_dir = Channel.fromPath(params.artic_analysis_dir, type: 'dir')
   ch_metadata = Channel.fromPath(params.metadata, type: 'file')
