@@ -135,6 +135,7 @@ process ncov_tools {
   publishDir "${params.outdir}", mode: 'copy', pattern: "qc_analysis"
   publishDir "${params.outdir}", mode: 'copy', pattern: "qc_reports"
   publishDir "${params.outdir}", mode: 'copy', pattern: "qc_sequencing"
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_annotation"
 
   input:
   tuple path(config_yaml), path(data_root), path(resources), path(ncov_tools)
@@ -147,12 +148,12 @@ process ncov_tools {
   path("qc_analysis")
   path("qc_reports")
   path("qc_sequencing")
+  path("qc_annotation")
 
   script:
   """
-  snakemake \
-    -s ./ncov-tools/workflow/Snakefile \
-    --cores 16 \
-    all
+  snakemake -s ./ncov-tools/workflow/Snakefile --cores 16 all
+  snakemake -s ./ncov-tools/workflow/Snakefile --cores 1 build_snpeff_db
+  snakemake -s ./ncov-tools/workflow/Snakefile --cores 2 all_qc_annotation
   """
 }
