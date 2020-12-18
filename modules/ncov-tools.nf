@@ -120,6 +120,9 @@ process create_config_yaml {
 
 
 process ncov_tools {
+
+  tag { params.run_name }
+  
   cpus 16
   executor 'sge'
   penv 'smp'
