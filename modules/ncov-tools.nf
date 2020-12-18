@@ -55,7 +55,7 @@ process prepare_data_root {
   executor 'local'
   
   input:
-  tuple path(ncov2010_artic_nf_analysis_dir), path(primer_scheme_dir), path(metadata)
+  tuple path(ncov2019_artic_nf_analysis_dir), path(primer_scheme_dir), path(metadata)
   
   output:
   path("ncov-tools-input", type: 'dir')
@@ -65,10 +65,10 @@ process prepare_data_root {
   """
   mkdir ncov-tools-input
   ${metadata}
-  cp ${ncov2010_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_makeConsensus/* ncov-tools-input
-  cp ${ncov2010_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_readMapping/* ncov-tools-input
-  cp ${ncov2010_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_trimPrimerSequences/* ncov-tools-input
-  cp ${ncov2010_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callVariants/* ncov-tools-input
+  cp ${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_makeConsensus/* ncov-tools-input
+  cp ${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_readMapping/* ncov-tools-input
+  cp ${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_trimPrimerSequences/* ncov-tools-input
+  cp ${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callVariants/* ncov-tools-input
   cp ${primer_scheme_dir}/nCoV-2019.reference.fasta ncov-tools-input
   cp ${primer_scheme_dir}/nCoV-2019.primer.bed ncov-tools-input
   """
