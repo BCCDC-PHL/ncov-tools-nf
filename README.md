@@ -21,7 +21,21 @@ nextflow run BCCDC-PHL/ncov-tools-nf \
   --artic_analysis_dir <output/from/ncov2019-artic-nf> \
   [--completeness_threshold <completeness_threshold>] \
   [--metadata <metadata.tsv>] \
+  [--watchlists <watchlists.csv>] \
   --outdir <ncov-tools-output> \
+```
+
+## Watchlists
+The `--watchlists` parameter takes a three-column `.csv`
+
+1. An identifier for the variant of concern
+2. A reporting threshold, representing the proportion of mutations from the watchlist that must be observed
+for the sample to be included in the `observed_variants.tsv` output file.
+3. A path to the `watchlist.vcf` file for that variant of concern.
+
+```
+VOC-202012_01,0.7,/path/to/watchlist_uk_lineage.vcf
+N501Y.V2,0.7,/path/to/watchlist_SA_variant.vcf
 ```
 
 ## Caveats
