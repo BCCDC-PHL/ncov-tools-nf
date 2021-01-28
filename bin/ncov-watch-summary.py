@@ -96,7 +96,7 @@ def main(args):
     unique_mutation_names_in_watchlist = list({var.name for var in watch_variants})
     num_unique_mutation_names_in_watchlist = len(unique_mutation_names_in_watchlist)
 
-    print("\t".join(["sample_id", "mutation_set_id", "num_observed_mutations", "num_watch_mutations_in_mutation_set", "proportion_watch_mutations_observed"]))
+    print("\t".join(["sample_id", "watchlist_id", "num_observed_mutations", "num_mutations_in_watchlist", "proportion_watchlist_mutations_observed"]))
     for sample_id, observed_mutations in ncov_watch_output_by_sample_id.items():
         # Only count observed mutations with unique names
         unique_observed_mutation_names = list({mut for mut in observed_mutations.values()})
