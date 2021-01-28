@@ -179,22 +179,45 @@ process ncov_tools {
 
 process ncov_watch {
 
-  tag { params.run_name }
+  tag { mutation_set_id }
   
   cpus 1
   executor 'local'
 
-  publishDir "${params.outdir}", mode: 'copy', pattern: ""
+  publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}_${mutation_set_id}_ncov_watch_variants.tsv"
 
   input:
   tuple path(data_root), val(mutation_set_id), val(watchlist_filename), path(watchlists_dir)
   
   output:
-  path("${params.run_name}_${mutation_set_id}_ncov_watch_variants.tsv")
+  tuple val(mutation_set_id), val(watchlist_filename), path(watchlists_dir), path("${params.run_name}_${mutation_set_id}_ncov_watch_variants.tsv")
 
   script:
   """
-  mkdir ncov_watch
   ncov-watch -d ${data_root} --mutation_set ${watchlists_dir}/${watchlist_filename} | sed 's/\\.variants\\.tsv//' > ${params.run_name}_${mutation_set_id}_ncov_watch_variants.tsv 2> /dev/null
+  """
+}
+
+process ncov_watch_summary {
+
+  tag { mutation_set_id }
+
+  cpus 1
+  executor 'local'
+
+  publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}_${mutation_set_id}_ncov_watch_summary.tsv"
+
+  input:
+  tuple path(data_root), val(mutation_set_id), val(watchlist_filename), path(watchlists_dir), path(ncov_watch_output)
+
+  output:
+  tuple val(mutation_set_id), val(watchlist_filename), path(watchlists_dir), path("${params.run_name}_${mutation_set_id}_ncov_watch_summary.tsv")
+
+  script:
+  """
+  ncov-watch-summary.py ${ncov_watch_output} --variant-id ${mutation_set_id} --watchlist ${watchlists_dir}/${watchlist_filename} > ncov_watch_summary_tmp.tsv 2> /dev/null
+  head -n 1 ncov_watch_summary_tmp.tsv > header.tsv
+  tail -n+2 ncov_watch_summary_tmp.tsv | sort -b -k3,3rn -k1,1 > data_sorted.tsv
+  cat header.tsv data_sorted.tsv > ${params.run_name}_${mutation_set_id}_ncov_watch_summary.tsv
   """
 }

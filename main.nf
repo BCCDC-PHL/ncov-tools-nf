@@ -11,6 +11,7 @@ include { find_negative_control } from './modules/ncov-tools.nf'
 include { create_config_yaml } from './modules/ncov-tools.nf'
 include { ncov_tools } from './modules/ncov-tools.nf'
 include { ncov_watch } from './modules/ncov-tools.nf'
+include { ncov_watch_summary } from './modules/ncov-tools.nf'
 
 workflow {
   
@@ -33,5 +34,6 @@ workflow {
   create_config_yaml(ch_run_name.combine(find_negative_control.out).combine(ch_metadata))
   ncov_tools(create_config_yaml.out.combine(prepare_data_root.out).combine(index_reference_genome.out).combine(download_ncov_tools.out))
   ncov_watch(prepare_data_root.out.combine(ch_watchlists))
+  ncov_watch_summary(prepare_data_root.out.combine(ncov_watch.out))
   
 }
