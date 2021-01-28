@@ -36,6 +36,26 @@ process download_artic_ncov2019 {
   """
 }
 
+process download_ncov_watchlists {
+  tag { version }
+  executor 'local'
+  
+  input:
+  val(version)
+  
+  output:
+  tuple path("watchlists/watchlists.csv"), path("watchlists", type: 'dir')
+
+
+  script:
+  """
+  wget https://github.com/dfornika/ncov_watchlists/archive/v${version}.tar.gz
+  tar -xzf v${version}.tar.gz
+  
+  cp -r ncov_watchlists-${version}/watchlists watchlists
+  """
+}
+
 process index_reference_genome {
   executor 'local'
   
@@ -153,7 +173,28 @@ process ncov_tools {
   script:
   """
   snakemake -s ./ncov-tools/workflow/Snakefile --cores 16 all
-  snakemake -s ./ncov-tools/workflow/Snakefile --cores 1 build_snpeff_db
   snakemake -s ./ncov-tools/workflow/Snakefile --cores 2 all_qc_annotation
+  """
+}
+
+process ncov_watch {
+
+  tag { params.run_name }
+  
+  cpus 1
+  executor 'local'
+
+  publishDir "${params.outdir}", mode: 'copy', pattern: ""
+
+  input:
+  tuple path(data_root), val(mutation_set_id), val(watchlist_filename), path(watchlists_dir)
+  
+  output:
+  path("${params.run_name}_${mutation_set_id}_ncov_watch_variants.tsv")
+
+  script:
+  """
+  mkdir ncov_watch
+  ncov-watch -d ${data_root} --mutation_set ${watchlists_dir}/${watchlist_filename} | sed 's/\\.variants\\.tsv//' > ${params.run_name}_${mutation_set_id}_ncov_watch_variants.tsv 2> /dev/null
   """
 }
