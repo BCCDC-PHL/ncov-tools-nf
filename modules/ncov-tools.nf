@@ -198,6 +198,29 @@ process ncov_watch {
   """
 }
 
+process combine_ncov_watch_variants {
+
+  tag { params.run_name }
+
+  cpus 1
+  executor 'local'
+
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "ncov_watch_variants.tsv"
+
+  input:
+  path(variants)
+
+  output:
+  path("ncov_watch_variants.tsv")
+
+  script:
+  """
+  head -qn 1 *_variants.tsv | uniq > header.tsv
+  tail -qn+2 *_variants.tsv | sort -k1,1 -k4,4n | uniq > data.tsv
+  cat header.tsv data.tsv > ncov_watch_variants.tsv
+  """
+}
+
 process ncov_watch_summary {
 
   tag { mutation_set_id }
@@ -208,10 +231,10 @@ process ncov_watch_summary {
   publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}_${mutation_set_id}_ncov_watch_summary.tsv"
 
   input:
-  tuple path(data_root), val(mutation_set_id), val(watchlist_filename), path(watchlists_dir), path(ncov_watch_output)
+  tuple val(mutation_set_id), val(watchlist_filename), path(watchlists_dir), path(ncov_watch_output)
 
   output:
-  tuple val(mutation_set_id), val(watchlist_filename), path(watchlists_dir), path("${params.run_name}_${mutation_set_id}_ncov_watch_summary.tsv")
+  path("${params.run_name}_${mutation_set_id}_ncov_watch_summary.tsv")
 
   script:
   """
@@ -219,5 +242,28 @@ process ncov_watch_summary {
   head -n 1 ncov_watch_summary_tmp.tsv > header.tsv
   tail -n+2 ncov_watch_summary_tmp.tsv | sort -b -k3,3rn -k1,1 > data_sorted.tsv
   cat header.tsv data_sorted.tsv > ${params.run_name}_${mutation_set_id}_ncov_watch_summary.tsv
+  """
+}
+
+process combine_ncov_watch_summaries {
+
+  tag { params.run_name }
+
+  cpus 1
+  executor 'local'
+
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "ncov_watch_summary.tsv"
+
+  input:
+  path(summaries)
+
+  output:
+  path("ncov_watch_summary.tsv")
+
+  script:
+  """
+  head -qn 1 *_summary.tsv | uniq > header.tsv
+  tail -qn+2 *_summary.tsv | sort -k1,1 -k2,2 > data.tsv
+  cat header.tsv data.tsv > ncov_watch_summary.tsv
   """
 }
