@@ -85,17 +85,3 @@ if __name__ == "__main__":
     parser.add_argument('ncov_watch_output', help='output from ncov-watch.py')
     args = parser.parse_args()
     main(args)
-    exit(0)
-
-    
-
-
-    
-    for f in gen_func():
-        if f.find("variants.tsv") >= 0:
-            variants = load_ivar_variants(f)
-        else:
-            variants = load_vcf(f)
-        for v in variants:
-            if v.key() in watch_dict:
-                print("\t".join([os.path.basename(f), watch_dict[v.key()], v.contig, str(v.position), v.reference, v.alt]))
