@@ -7,6 +7,7 @@ include { download_artic_ncov2019 } from './modules/ncov-tools.nf'
 include { download_ncov_watchlists } from './modules/ncov-tools.nf'
 include { index_reference_genome } from './modules/ncov-tools.nf'
 include { prepare_data_root } from './modules/ncov-tools.nf'
+include { create_sample_id_list } from './modules/ncov-tools.nf'
 include { find_negative_control } from './modules/ncov-tools.nf'
 include { create_config_yaml } from './modules/ncov-tools.nf'
 include { ncov_tools } from './modules/ncov-tools.nf'
@@ -32,12 +33,13 @@ workflow {
   ch_watchlists = download_ncov_watchlists.out.splitCsv().map{ it -> [it[0][0], it[0][1], it[1]] }
   index_reference_genome(download_artic_ncov2019.out)
   prepare_data_root(ch_artic_analysis_dir.combine(download_artic_ncov2019.out).combine(ch_metadata))
+  create_sample_id_list(prepare_data_root.out)
   find_negative_control(prepare_data_root.out)
   create_config_yaml(ch_run_name.combine(find_negative_control.out).combine(ch_metadata))
   ncov_tools(create_config_yaml.out.combine(prepare_data_root.out).combine(index_reference_genome.out).combine(download_ncov_tools.out))
   ncov_watch(prepare_data_root.out.combine(ch_watchlists))
   combine_ncov_watch_variants(ncov_watch.out.map{ it -> it[3] }.collect())
-  ncov_watch_summary(ncov_watch.out)
+  ncov_watch_summary(ncov_watch.out.combine(create_sample_id_list.out))
   combine_ncov_watch_summaries(ncov_watch_summary.out.collect())
   
 }

@@ -24,6 +24,10 @@ nextflow run BCCDC-PHL/ncov-tools-nf \
   --outdir <ncov-tools-output> \
 ```
 
+## Additional Outputs
+There are some outputs from this pipeline that differ from the standard [ncov-tools](https://github.com/jts/ncov-tools) outputs. They are:
+- `qc_reports/<run_name>_ncov_watch_summary.tsv`: Not produced by ncov-tools. A summary of the number of mutations observed for each watchlist, for each sample.
+
 ## Caveats
 - We currently assume that the negative control sample is named starting with the letters `NEG`, and that
   no other sample in the run starts with those letters. This is being addressed in [this issue](https://github.com/BCCDC-PHL/ncov-tools-nf/issues/6).

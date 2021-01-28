@@ -30,6 +30,7 @@ def load_vcf(filename):
             sys.stderr.write("Multi-allelic VCF not supported\n")
             sys.exit(1)
 
+        # Skip any line in the .vcf that starts with '#'
         if not record.chrom.startswith('#'):
             v = Variant(record.chrom, record.pos, record.ref, record.alts[0])
             if "Name" in record.info:
@@ -39,8 +40,36 @@ def load_vcf(filename):
     return variants
 
 
-def parse_ncov_watch_ouput_by_sample_id(ncov_watch_output_path):
+def parse_sample_ids(sample_ids_path):
+    """
+    input: "path/to/sample_ids.tsv"
+    output: ["sample-01", "sample-02", ...]
+    """
+    with open(sample_ids_path, 'r') as f:
+        all_sample_ids = [line.strip() for line in f]
+
+    return all_sample_ids
+
+
+def parse_ncov_watch_ouput_by_sample_id(ncov_watch_output_path, all_sample_ids):
+    """
+    input: "/path/to/ncov_watch_output.tsv", ["sample-01", "sample-02", ...]
+    output: {
+              "sample-01": {
+                             "MN908947.3,11287,GTCTGGTTTT,G": "ORF1ab:del3675-3677",
+                             "MN908947.3,23063,A,T": "S:N501Y"
+                           },
+              "sample-02": {
+                             ...
+                           },
+              ...
+            }
+    """
     ncov_watch_output_by_sample_id = {}
+
+    for sample_id in all_sample_ids:
+        ncov_watch_output_by_sample_id[sample_id] = {}
+
     try:
         with open(ncov_watch_output_path, 'r') as f:
             reader = csv.DictReader(f, delimiter='\t')
@@ -52,36 +81,39 @@ def parse_ncov_watch_ouput_by_sample_id(ncov_watch_output_path):
                 ncov_watch_output_by_sample_id[sample_id][concatenated_key] = record['mutation']
     except:
         pass
+
     return ncov_watch_output_by_sample_id
 
 
 def main(args):
-    ncov_watch_output_by_sample_id = parse_ncov_watch_ouput_by_sample_id(args.ncov_watch_output)
+    all_sample_ids = parse_sample_ids(args.sample_ids)
+
+    ncov_watch_output_by_sample_id = parse_ncov_watch_ouput_by_sample_id(args.ncov_watch_output, all_sample_ids)
 
     watch_variants = load_vcf(args.watchlist)
 
-    watch_dict = {}
-    for v in watch_variants:
-        watch_dict[v.key()] = v.name
-    
-    print("\t".join(["sample_id", "variant_id", "num_observed_substitutions", "total_substitutions_for_variant", "proportion_observed"]))
-    
-    total_substitutions_for_variant = len(watch_dict.keys())
-    
-    for sample_id, observed_substitutions in ncov_watch_output_by_sample_id.items():
-        num_observed_substitutions = len(observed_substitutions.keys())
-        proportion_observed = num_observed_substitutions / total_substitutions_for_variant
+    # Only count watchlist mutations with unique names
+    unique_mutation_names_in_watchlist = list({var.name for var in watch_variants})
+    num_unique_mutation_names_in_watchlist = len(unique_mutation_names_in_watchlist)
+
+    print("\t".join(["sample_id", "mutation_set_id", "num_observed_mutations", "num_watch_mutations_in_mutation_set", "proportion_watch_mutations_observed"]))
+    for sample_id, observed_mutations in ncov_watch_output_by_sample_id.items():
+        # Only count observed mutations with unique names
+        unique_observed_mutation_names = list({mut for mut in observed_mutations.values()})
+        num_unique_observed_mutation_names = len(unique_observed_mutation_names)
+        proportion_watchlist_mutations_observed = num_unique_observed_mutation_names / num_unique_mutation_names_in_watchlist
         sample_summary_record = '\t'.join([
-            sample_id, args.variant_id, str(num_observed_substitutions), str(total_substitutions_for_variant), "{:.3f}".format(proportion_observed)
+            sample_id, args.watchlist_id, str(num_unique_observed_mutation_names), str(num_unique_mutation_names_in_watchlist), "{:.3f}".format(proportion_watchlist_mutations_observed)
         ])
         print(sample_summary_record)
-    
+
 
 if __name__ == "__main__":
-    description = 'Summarize variants detected per sample and watchlist'
+    description = 'Summarize mutations detected per sample and watchlist'
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('-w', '--watchlist', help='file containing the variants to screen for')
-    parser.add_argument('-v', '--variant-id', help='identifier for the variant of interest')
+    parser.add_argument('-s', '--sample-ids', help='file containing a single list of all sample IDs')
+    parser.add_argument('-w', '--watchlist', help='file containing the mutations to screen for (.vcf format)')
+    parser.add_argument('-i', '--watchlist-id', help='identifier for the watchlist')
     parser.add_argument('ncov_watch_output', help='output from ncov-watch.py')
     args = parser.parse_args()
     main(args)

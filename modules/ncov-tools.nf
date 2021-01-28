@@ -94,6 +94,21 @@ process prepare_data_root {
   """
 }
 
+process create_sample_id_list {
+  executor 'local'
+
+  input:
+  path(data_root)
+
+  output:
+  path("sample_id_list.tsv")
+
+  script:
+  """
+  find ${data_root}/ -name '*.variants.tsv' | xargs -n 1 basename | sed 's/\\.variants\\.tsv//' | sort > sample_id_list.tsv
+  """
+}
+
 process find_negative_control {
   executor 'local'
   
@@ -153,7 +168,7 @@ process ncov_tools {
   publishDir "${params.outdir}", mode: 'copy', pattern: "lineages"
   publishDir "${params.outdir}", mode: 'copy', pattern: "plots"
   publishDir "${params.outdir}", mode: 'copy', pattern: "qc_analysis"
-  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_reports"
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_reports/*.tsv"
   publishDir "${params.outdir}", mode: 'copy', pattern: "qc_sequencing"
   publishDir "${params.outdir}", mode: 'copy', pattern: "qc_annotation"
 
@@ -166,7 +181,7 @@ process ncov_tools {
   path("lineages")
   path("plots")
   path("qc_analysis")
-  path("qc_reports")
+  path("qc_reports/*.tsv")
   path("qc_sequencing")
   path("qc_annotation")
 
@@ -174,6 +189,7 @@ process ncov_tools {
   """
   snakemake -s ./ncov-tools/workflow/Snakefile --cores 16 all
   snakemake -s ./ncov-tools/workflow/Snakefile --cores 2 all_qc_annotation
+  rm qc_reports/${params.run_name}_ncov_watch_variants.tsv
   """
 }
 
@@ -205,43 +221,43 @@ process combine_ncov_watch_variants {
   cpus 1
   executor 'local'
 
-  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "ncov_watch_variants.tsv"
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}_ncov_watch_variants.tsv"
 
   input:
   path(variants)
 
   output:
-  path("ncov_watch_variants.tsv")
+  path("${params.run_name}_ncov_watch_variants.tsv")
 
   script:
   """
   head -qn 1 *_variants.tsv | uniq > header.tsv
   tail -qn+2 *_variants.tsv | sort -k1,1 -k4,4n | uniq > data.tsv
-  cat header.tsv data.tsv > ncov_watch_variants.tsv
+  cat header.tsv data.tsv > ${params.run_name}_ncov_watch_variants.tsv
   """
 }
 
 process ncov_watch_summary {
 
-  tag { mutation_set_id }
+  tag { watchlist_id }
 
   cpus 1
   executor 'local'
 
-  publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}_${mutation_set_id}_ncov_watch_summary.tsv"
+  publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}_${watchlist_id}_ncov_watch_summary.tsv"
 
   input:
-  tuple val(mutation_set_id), val(watchlist_filename), path(watchlists_dir), path(ncov_watch_output)
+  tuple val(watchlist_id), val(watchlist_filename), path(watchlists_dir), path(ncov_watch_output), path(sample_ids)
 
   output:
-  path("${params.run_name}_${mutation_set_id}_ncov_watch_summary.tsv")
+  path("${params.run_name}_${watchlist_id}_ncov_watch_summary.tsv")
 
   script:
   """
-  ncov-watch-summary.py ${ncov_watch_output} --variant-id ${mutation_set_id} --watchlist ${watchlists_dir}/${watchlist_filename} > ncov_watch_summary_tmp.tsv 2> /dev/null
+  ncov-watch-summary.py ${ncov_watch_output} --sample-ids ${sample_ids} --watchlist-id ${watchlist_id} --watchlist ${watchlists_dir}/${watchlist_filename} > ncov_watch_summary_tmp.tsv 2> /dev/null
   head -n 1 ncov_watch_summary_tmp.tsv > header.tsv
   tail -n+2 ncov_watch_summary_tmp.tsv | sort -b -k3,3rn -k1,1 > data_sorted.tsv
-  cat header.tsv data_sorted.tsv > ${params.run_name}_${mutation_set_id}_ncov_watch_summary.tsv
+  cat header.tsv data_sorted.tsv > ${params.run_name}_${watchlist_id}_ncov_watch_summary.tsv
   """
 }
 
@@ -252,18 +268,18 @@ process combine_ncov_watch_summaries {
   cpus 1
   executor 'local'
 
-  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "ncov_watch_summary.tsv"
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}_ncov_watch_summary.tsv"
 
   input:
   path(summaries)
 
   output:
-  path("ncov_watch_summary.tsv")
+  path("${params.run_name}_ncov_watch_summary.tsv")
 
   script:
   """
   head -qn 1 *_summary.tsv | uniq > header.tsv
   tail -qn+2 *_summary.tsv | sort -k1,1 -k2,2 > data.tsv
-  cat header.tsv data.tsv > ncov_watch_summary.tsv
+  cat header.tsv data.tsv > ${params.run_name}_ncov_watch_summary.tsv
   """
 }
