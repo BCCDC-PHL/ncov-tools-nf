@@ -36,6 +36,26 @@ process download_artic_ncov2019 {
   """
 }
 
+process download_ncov_watchlists {
+  tag { version }
+  executor 'local'
+  
+  input:
+  val(version)
+  
+  output:
+  tuple path("watchlists/watchlists.csv"), path("watchlists", type: 'dir')
+
+
+  script:
+  """
+  wget https://github.com/dfornika/ncov_watchlists/archive/v${version}.tar.gz
+  tar -xzf v${version}.tar.gz
+  
+  cp -r ncov_watchlists-${version}/watchlists watchlists
+  """
+}
+
 process index_reference_genome {
   executor 'local'
   
@@ -71,6 +91,21 @@ process prepare_data_root {
   cp ${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callVariants/* ncov-tools-input
   cp ${primer_scheme_dir}/nCoV-2019.reference.fasta ncov-tools-input
   cp ${primer_scheme_dir}/nCoV-2019.primer.bed ncov-tools-input
+  """
+}
+
+process create_sample_id_list {
+  executor 'local'
+
+  input:
+  path(data_root)
+
+  output:
+  path("sample_id_list.tsv")
+
+  script:
+  """
+  find ${data_root}/ -name '*.variants.tsv' | xargs -n 1 basename | sed 's/\\.variants\\.tsv//' | sort > sample_id_list.tsv
   """
 }
 
@@ -133,7 +168,7 @@ process ncov_tools {
   publishDir "${params.outdir}", mode: 'copy', pattern: "lineages"
   publishDir "${params.outdir}", mode: 'copy', pattern: "plots"
   publishDir "${params.outdir}", mode: 'copy', pattern: "qc_analysis"
-  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_reports"
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_reports/*.tsv"
   publishDir "${params.outdir}", mode: 'copy', pattern: "qc_sequencing"
   publishDir "${params.outdir}", mode: 'copy', pattern: "qc_annotation"
 
@@ -146,14 +181,105 @@ process ncov_tools {
   path("lineages")
   path("plots")
   path("qc_analysis")
-  path("qc_reports")
+  path("qc_reports/*.tsv")
   path("qc_sequencing")
   path("qc_annotation")
 
   script:
   """
   snakemake -s ./ncov-tools/workflow/Snakefile --cores 16 all
-  snakemake -s ./ncov-tools/workflow/Snakefile --cores 1 build_snpeff_db
   snakemake -s ./ncov-tools/workflow/Snakefile --cores 2 all_qc_annotation
+  rm qc_reports/${params.run_name}_ncov_watch_variants.tsv
+  """
+}
+
+process ncov_watch {
+
+  tag { mutation_set_id }
+  
+  cpus 1
+  executor 'local'
+
+  publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}_${mutation_set_id}_ncov_watch_variants.tsv"
+
+  input:
+  tuple path(data_root), val(mutation_set_id), val(watchlist_filename), path(watchlists_dir)
+  
+  output:
+  tuple val(mutation_set_id), val(watchlist_filename), path(watchlists_dir), path("${params.run_name}_${mutation_set_id}_ncov_watch_variants.tsv")
+
+  script:
+  """
+  ncov-watch -d ${data_root} --mutation_set ${watchlists_dir}/${watchlist_filename} | sed 's/\\.variants\\.tsv//' > ${params.run_name}_${mutation_set_id}_ncov_watch_variants.tsv 2> /dev/null
+  """
+}
+
+process combine_ncov_watch_variants {
+
+  tag { params.run_name }
+
+  cpus 1
+  executor 'local'
+
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}_ncov_watch_variants.tsv"
+
+  input:
+  path(variants)
+
+  output:
+  path("${params.run_name}_ncov_watch_variants.tsv")
+
+  script:
+  """
+  head -qn 1 *_variants.tsv | uniq > header.tsv
+  tail -qn+2 *_variants.tsv | sort -k1,1 -k4,4n | uniq > data.tsv
+  cat header.tsv data.tsv > ${params.run_name}_ncov_watch_variants.tsv
+  """
+}
+
+process ncov_watch_summary {
+
+  tag { watchlist_id }
+
+  cpus 1
+  executor 'local'
+
+  publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}_${watchlist_id}_ncov_watch_summary.tsv"
+
+  input:
+  tuple val(watchlist_id), val(watchlist_filename), path(watchlists_dir), path(ncov_watch_output), path(sample_ids)
+
+  output:
+  path("${params.run_name}_${watchlist_id}_ncov_watch_summary.tsv")
+
+  script:
+  """
+  ncov-watch-summary.py ${ncov_watch_output} --sample-ids ${sample_ids} --watchlist-id ${watchlist_id} --watchlist ${watchlists_dir}/${watchlist_filename} > ncov_watch_summary_tmp.tsv 2> /dev/null
+  head -n 1 ncov_watch_summary_tmp.tsv > header.tsv
+  tail -n+2 ncov_watch_summary_tmp.tsv | sort -b -k3,3rn -k1,1 > data_sorted.tsv
+  cat header.tsv data_sorted.tsv > ${params.run_name}_${watchlist_id}_ncov_watch_summary.tsv
+  """
+}
+
+process combine_ncov_watch_summaries {
+
+  tag { params.run_name }
+
+  cpus 1
+  executor 'local'
+
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}_ncov_watch_summary.tsv"
+
+  input:
+  path(summaries)
+
+  output:
+  path("${params.run_name}_ncov_watch_summary.tsv")
+
+  script:
+  """
+  head -qn 1 *_summary.tsv | uniq > header.tsv
+  tail -qn+2 *_summary.tsv | sort -k1,1 -k2,2 > data.tsv
+  cat header.tsv data.tsv > ${params.run_name}_ncov_watch_summary.tsv
   """
 }
