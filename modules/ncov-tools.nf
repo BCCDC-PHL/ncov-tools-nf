@@ -52,7 +52,7 @@ process download_ncov_watchlists {
   wget https://github.com/BCCDC-PHL/ncov-watchlists/archive/v${version}.tar.gz
   tar -xzf v${version}.tar.gz
   
-  cp -r ncov_watchlists-${version}/watchlists watchlists
+  cp -r ncov-watchlists-${version}/watchlists watchlists
   """
 }
 
