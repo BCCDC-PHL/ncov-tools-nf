@@ -49,7 +49,7 @@ process download_ncov_watchlists {
 
   script:
   """
-  wget https://github.com/dfornika/ncov_watchlists/archive/v${version}.tar.gz
+  wget https://github.com/BCCDC-PHL/ncov-watchlists/archive/v${version}.tar.gz
   tar -xzf v${version}.tar.gz
   
   cp -r ncov_watchlists-${version}/watchlists watchlists
