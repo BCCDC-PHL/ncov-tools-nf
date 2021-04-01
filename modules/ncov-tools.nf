@@ -324,13 +324,13 @@ process combine_ncov_watch_summaries {
   cpus 1
   executor 'local'
 
-  publishDir "${params.outdir}/${library_plate_id}/qc_reports", mode: 'copy', pattern: "${params.run_name}_ncov_watch_summary.tsv"
+  publishDir "${params.outdir}/${library_plate_id}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_summary.tsv"
 
   input:
   tuple val(library_plate_id), path(summaries)
 
   output:
-  path("${params.run_name}_*ncov_watch_summary.tsv")
+  path("${params.run_name}*_ncov_watch_summary.tsv")
 
   script:
   def ncov_watch_summary_filename = params.split_by_plate ? "${params.run_name}_${library_plate_id}_ncov_watch_summary.tsv" : "${params.run_name}_ncov_watch_summary.tsv"
