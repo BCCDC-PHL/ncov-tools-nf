@@ -29,17 +29,18 @@ workflow {
   download_ncov_tools(ch_ncov_tools_version)
   download_artic_ncov2019(ch_primer_scheme_version.combine(ch_primer_scheme_name))
   download_ncov_watchlists(ch_ncov_watchlists_version)
-  // closure below is used to transform [[1, 2], 3] into [1, 2, 3]. Is there a better way?
   ch_watchlists = download_ncov_watchlists.out.splitCsv().map{ it -> [it[0][0], it[0][1], it[1]] }
   index_reference_genome(download_artic_ncov2019.out)
-  prepare_data_root(ch_artic_analysis_dir.combine(download_artic_ncov2019.out).combine(ch_metadata))
+  
+  ch_library_plate_ids = Channel.fromList([194, 195])
+  prepare_data_root(ch_artic_analysis_dir.combine(download_artic_ncov2019.out).combine(ch_metadata).combine(ch_library_plate_ids))
   create_sample_id_list(prepare_data_root.out)
   find_negative_control(prepare_data_root.out)
-  create_config_yaml(ch_run_name.combine(find_negative_control.out).combine(ch_metadata))
-  ncov_tools(create_config_yaml.out.combine(prepare_data_root.out).combine(index_reference_genome.out).combine(download_ncov_tools.out))
+  create_config_yaml(ch_run_name.combine(ch_library_plate_ids).combine(find_negative_control.out).combine(ch_metadata))
+  ncov_tools(create_config_yaml.out.join(prepare_data_root.out).combine(index_reference_genome.out).combine(download_ncov_tools.out))
   ncov_watch(prepare_data_root.out.combine(ch_watchlists))
-  combine_ncov_watch_variants(ncov_watch.out.map{ it -> it[3] }.collect())
-  ncov_watch_summary(ncov_watch.out.combine(create_sample_id_list.out))
-  combine_ncov_watch_summaries(ncov_watch_summary.out.collect())
+  combine_ncov_watch_variants(ncov_watch.out.map{ it -> [it[0], it[4]] }.groupTuple())
+  ncov_watch_summary(create_sample_id_list.out.cross(ncov_watch.out).map{ it -> it[1] + it[0][1].toString() })
+  combine_ncov_watch_summaries(ncov_watch_summary.out.groupTuple())
   
 }
