@@ -6,6 +6,7 @@ include { download_ncov_tools } from './modules/ncov-tools.nf'
 include { download_artic_ncov2019 } from './modules/ncov-tools.nf'
 include { download_ncov_watchlists } from './modules/ncov-tools.nf'
 include { index_reference_genome } from './modules/ncov-tools.nf'
+include { get_library_plate_ids } from './modules/ncov-tools.nf'
 include { prepare_data_root } from './modules/ncov-tools.nf'
 include { create_sample_id_list } from './modules/ncov-tools.nf'
 include { find_negative_control } from './modules/ncov-tools.nf'
@@ -32,7 +33,8 @@ workflow {
   ch_watchlists = download_ncov_watchlists.out.splitCsv().map{ it -> [it[0][0], it[0][1], it[1]] }
   index_reference_genome(download_artic_ncov2019.out)
   
-  ch_library_plate_ids = Channel.fromList([194, 195])
+  ch_library_plate_ids = get_library_plate_ids(ch_artic_analysis_dir).splitText().map{ it -> it.trim() }
+  
   prepare_data_root(ch_artic_analysis_dir.combine(download_artic_ncov2019.out).combine(ch_metadata).combine(ch_library_plate_ids))
   create_sample_id_list(prepare_data_root.out)
   find_negative_control(prepare_data_root.out)

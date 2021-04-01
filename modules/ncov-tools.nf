@@ -80,6 +80,27 @@ process index_reference_genome {
   """
 }
 
+process get_library_plate_ids {
+
+  tag { params.run_name }
+
+  executor 'local'
+  
+  input:
+  path(artic_analysis_dir)
+  
+  output:
+  stdout
+
+  script:
+  """
+  tail -n+2 ${artic_analysis_dir}/*.qc.csv | \
+  grep -v 'POS*' | grep -v 'NEG*' |
+  cut -f 1 -d ',' | cut -f 2 -d '-' | sort | uniq
+  """
+}
+
+
 process prepare_data_root {
 
   tag { params.run_name + " / " + library_plate_id }
@@ -186,7 +207,7 @@ process ncov_tools {
 
   tag { params.run_name + " / " + library_plate_id }
   
-  cpus 28
+  cpus 14
 
   executor 'sge'
 
