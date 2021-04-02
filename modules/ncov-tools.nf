@@ -103,7 +103,7 @@ process get_library_plate_ids {
 
 process prepare_data_root {
 
-  tag { params.run_name + " / " + library_plate_id }
+  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
 
   executor 'local'
   
@@ -134,7 +134,7 @@ process prepare_data_root {
 
 process create_sample_id_list {
 
-  tag { params.run_name + " / " + library_plate_id }
+  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
 
   executor 'local'
 
@@ -152,7 +152,7 @@ process create_sample_id_list {
 
 process find_negative_control {
 
-  tag { params.run_name + " / " + library_plate_id }
+  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
 
   executor 'local'
   
@@ -170,7 +170,7 @@ process find_negative_control {
 
 process create_config_yaml {
 
-  tag { params.run_name + " / " + library_plate_id }
+  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
 
   executor 'local'
 
@@ -205,7 +205,7 @@ process create_config_yaml {
 
 process ncov_tools {
 
-  tag { params.run_name + " / " + library_plate_id }
+  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
   
   cpus 14
 
@@ -215,14 +215,23 @@ process ncov_tools {
 
   queue 'all.q'
 
-  publishDir "${params.outdir}/${library_plate_id}", mode: 'copy', pattern: "config.yaml"
-  publishDir "${params.outdir}/${library_plate_id}", mode: 'copy', pattern: "bed"
-  publishDir "${params.outdir}/${library_plate_id}", mode: 'copy', pattern: "lineages"
-  publishDir "${params.outdir}/${library_plate_id}", mode: 'copy', pattern: "plots"
-  publishDir "${params.outdir}/${library_plate_id}", mode: 'copy', pattern: "qc_analysis"
-  publishDir "${params.outdir}/${library_plate_id}", mode: 'copy', pattern: "qc_reports/*.tsv"
-  publishDir "${params.outdir}/${library_plate_id}", mode: 'copy', pattern: "qc_sequencing"
-  publishDir "${params.outdir}/${library_plate_id}", mode: 'copy', pattern: "qc_annotation"
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "config.yaml", enabled: params.split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "bed", enabled: params.split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "lineages/${params.run_name}*", enabled: params.split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "plots", enabled: params.split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_analysis", enabled: params.split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_reports/*.tsv", enabled: params.split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_sequencing", enabled: params.split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_annotation", enabled: params.split_by_plate
+
+  publishDir "${params.outdir}", mode: 'copy', pattern: "config.yaml", enabled: !params.split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "bed", enabled: !params.split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "lineages/${params.run_name}*", enabled: !params.split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "plots", enabled: !params.split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_analysis", enabled: !params.split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_reports/*.tsv", enabled: !params.split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_sequencing", enabled: !params.split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_annotation", enabled: !params.split_by_plate
 
   input:
   tuple val(library_plate_id), path(config_yaml), path(data_root), path(resources), path(ncov_tools)
@@ -230,10 +239,11 @@ process ncov_tools {
   output:
   path("config.yaml")
   path("bed")
-  path("lineages")
+  path("lineages/${params.run_name}*_lineage_report.csv"), emit: lineage_report
+  path("lineages/${params.run_name}*_pangolin_version.txt"), emit: pangolin_version
   path("plots")
   path("qc_analysis")
-  path("qc_reports/*.tsv")
+  path("qc_reports/*.tsv"), emit: qc_report
   path("qc_sequencing")
   path("qc_annotation")
 
@@ -247,13 +257,14 @@ process ncov_tools {
 
 process ncov_watch {
 
-  tag { params.run_name + " / " + library_plate_id + " / " + mutation_set_id }
+  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id + " / " + mutation_set_id : params.run_name + " / " + mutation_set_id }
   
   cpus 1
 
   executor 'local'
 
-  publishDir "${params.outdir}/${library_plate_id}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_variants.tsv"
+  publishDir "${params.outdir}/by_plate/${library_plate_id}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_variants.tsv", enabled: params.split_by_plate
+  publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_variants.tsv", enabled: !params.split_by_plate
 
   input:
   tuple val(library_plate_id), path(data_root), val(mutation_set_id), val(watchlist_filename), path(watchlists_dir)
@@ -262,7 +273,7 @@ process ncov_watch {
   tuple val(library_plate_id), val(mutation_set_id), val(watchlist_filename), path(watchlists_dir), path("${params.run_name}_*_ncov_watch_variants.tsv")
 
   script:
-  def variants_output_filename = params.split_by_plate ? "${params.run_name}_${library_plate_id}_${mutation_set_id}_ncov_watch_variants.tsv" : "${params.run_name}_${mutation_set_id}_ncov_watch_variants.tsv"
+  def variants_output_filename = params.split_by_plate == true ? "${params.run_name}_${library_plate_id}_${mutation_set_id}_ncov_watch_variants.tsv" : "${params.run_name}_${mutation_set_id}_ncov_watch_variants.tsv"
   """
   ncov-watch -d ${data_root} --mutation_set ${watchlists_dir}/${watchlist_filename} | sed 's/\\.variants\\.tsv//' > ${variants_output_filename} 2> /dev/null
   """
@@ -270,12 +281,13 @@ process ncov_watch {
 
 process combine_ncov_watch_variants {
 
-  tag { params.run_name + " / " + library_plate_id }
+  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
 
   cpus 1
   executor 'local'
 
-  publishDir "${params.outdir}/${library_plate_id}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_variants.tsv"
+  publishDir "${params.outdir}/by_plate/${library_plate_id}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_variants.tsv", enabled: params.split_by_plate
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_variants.tsv", enabled: !params.split_by_plate
 
   input:
   tuple val(library_plate_id), path(variants)
@@ -294,12 +306,13 @@ process combine_ncov_watch_variants {
 
 process ncov_watch_summary {
 
-  tag { params.run_name + " / " + library_plate_id + " / " + watchlist_id }
+  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id + " / " + watchlist_id : params.run_name + " / " + watchlist_id }
 
   cpus 1
   executor 'local'
 
-  publishDir "${params.outdir}/${library_plate_id}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_${watchlist_id}_ncov_watch_summary.tsv"
+  publishDir "${params.outdir}/by_plate/${library_plate_id}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_${watchlist_id}_ncov_watch_summary.tsv", enabled: params.split_by_plate
+  publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_${watchlist_id}_ncov_watch_summary.tsv"
 
   input:
   tuple val(library_plate_id), val(watchlist_id), val(watchlist_filename), path(watchlists_dir), path(ncov_watch_output), path(sample_ids)
@@ -308,7 +321,7 @@ process ncov_watch_summary {
   tuple val(library_plate_id), path("${params.run_name}*_${watchlist_id}_ncov_watch_summary.tsv")
 
   script:
-  def ncov_watch_summary_filename = params.split_by_plate ? "${params.run_name}_${library_plate_id}_${watchlist_id}_ncov_watch_summary.tsv" : "${params.run_name}_${watchlist_id}_ncov_watch_variants.tsv"
+  def ncov_watch_summary_filename = params.split_by_plate ? "${params.run_name}_${library_plate_id}_${watchlist_id}_ncov_watch_summary.tsv" : "${params.run_name}_${watchlist_id}_ncov_watch_summary.tsv"
   """
   ncov-watch-summary.py ${ncov_watch_output} --sample-ids ${sample_ids} --watchlist-id ${watchlist_id} --watchlist ${watchlists_dir}/${watchlist_filename} > ncov_watch_summary_tmp.tsv 2> /dev/null
   head -n 1 ncov_watch_summary_tmp.tsv > header.tsv
@@ -319,12 +332,14 @@ process ncov_watch_summary {
 
 process combine_ncov_watch_summaries {
 
-  tag { params.run_name + " / " + library_plate_id }
+  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
 
   cpus 1
+
   executor 'local'
 
-  publishDir "${params.outdir}/${library_plate_id}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_summary.tsv"
+  publishDir "${params.outdir}/by_plate/${library_plate_id}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_summary.tsv", enabled: params.split_by_plate
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_summary.tsv", enabled: !params.split_by_plate
 
   input:
   tuple val(library_plate_id), path(summaries)
@@ -338,5 +353,101 @@ process combine_ncov_watch_summaries {
   head -qn 1 *_summary.tsv | uniq > header.tsv
   tail -qn+2 *_summary.tsv | sort -k1,1 -k2,2 > data.tsv
   cat header.tsv data.tsv > ${ncov_watch_summary_filename}
+  """
+}
+
+process combine_all_qc_summaries_for_run {
+
+  tag { params.run_name }
+
+  cpus 1
+
+  executor 'local'
+
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}_summary_qc.tsv"
+
+  input:
+  path(summaries)
+
+  output:
+  path("${params.run_name}_summary_qc.tsv")
+
+  script:
+  """
+  head -qn 1 *_summary_qc.tsv | uniq > header.tsv
+  tail -qn+2 *_summary_qc.tsv | sort -k1,1 -k2,2 > data.tsv
+  cat header.tsv data.tsv > "${params.run_name}_summary_qc_incorrect_run_name.tsv"
+  tail -qn+2 "${params.run_name}_summary_qc_incorrect_run_name.tsv" | awk -F '\t' 'BEGIN {OFS=FS}; {\$2 = substr(\$2, 1, length(\$2) - 4); print}' > data.tsv
+  cat header.tsv data.tsv > "${params.run_name}_summary_qc.tsv"
+  """
+}
+
+process combine_all_ncov_watch_summaries_for_run {
+
+  tag { params.run_name }
+
+  cpus 1
+
+  executor 'local'
+
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}_ncov_watch_summary.tsv"
+
+  input:
+  path(ncov_watch_summaries)
+
+  output:
+  path("${params.run_name}_ncov_watch_summary.tsv")
+
+  script:
+  """
+  head -qn 1 *_summary.tsv | uniq > header.tsv
+  tail -qn+2 *_summary.tsv | sort -k1,1 -k2,2 > data.tsv
+  cat header.tsv data.tsv > "${params.run_name}_ncov_watch_summary.tsv"
+  """
+}
+
+process combine_all_lineage_reports_for_run {
+
+  tag { params.run_name }
+
+  cpus 1
+
+  executor 'local'
+
+  publishDir "${params.outdir}/lineages", mode: 'copy', pattern: "${params.run_name}_lineage_report.csv"
+
+  input:
+  path(lineage_reports)
+
+  output:
+  path("${params.run_name}_lineage_report.csv")
+
+  script:
+  """
+  head -qn 1 *_lineage_report.csv | uniq > header.csv
+  tail -qn+2 *_lineage_report.csv | sort -k1,1 -k2,2 > data.csv
+  cat header.csv data.csv > "${params.run_name}_lineage_report.csv"
+  """
+}
+
+process get_pangolin_version_for_run {
+
+  tag { params.run_name }
+
+  cpus 1
+
+  executor 'local'
+
+  publishDir "${params.outdir}/lineages", mode: 'copy', pattern: "${params.run_name}_pangolin_version.txt"
+
+  input:
+  path(lineage_reports)
+
+  output:
+  path("${params.run_name}_pangolin_version.txt")
+
+  script:
+  """
+  cat ${params.run_name}*_pangolin_version.txt > ${params.run_name}_pangolin_version.txt
   """
 }
