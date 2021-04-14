@@ -18,7 +18,10 @@ include { ncov_watch_summary } from './modules/ncov-tools.nf'
 include { combine_ncov_watch_summaries } from './modules/ncov-tools.nf'
 include { combine_all_qc_summaries_for_run } from './modules/ncov-tools.nf'
 include { combine_all_ncov_watch_summaries_for_run } from './modules/ncov-tools.nf'
+include { combine_all_ncov_watch_variants_for_run } from './modules/ncov-tools.nf'
 include { combine_all_lineage_reports_for_run } from './modules/ncov-tools.nf'
+include { combine_all_mixture_reports_for_run } from './modules/ncov-tools.nf'
+include { combine_ambiguous_position_reports_for_run } from './modules/ncov-tools.nf'
 include { get_pangolin_version_for_run } from './modules/ncov-tools.nf'
 
 workflow {
@@ -58,10 +61,14 @@ workflow {
   combine_ncov_watch_summaries(ncov_watch_summary.out.groupTuple())
 
   if (params.split_by_plate) {
-    combine_all_qc_summaries_for_run(ncov_tools.out.qc_report.collect())
+    combine_all_qc_summaries_for_run(ncov_tools.out.qc_reports.collect())
     combine_all_lineage_reports_for_run(ncov_tools.out.lineage_report.collect())
     get_pangolin_version_for_run(ncov_tools.out.pangolin_version.first())
+    combine_all_ncov_watch_variants_for_run(combine_ncov_watch_variants.out.collect())
     combine_all_ncov_watch_summaries_for_run(combine_ncov_watch_summaries.out.collect())
+    combine_all_mixture_reports_for_run(ncov_tools.out.qc_reports.collect())
+    combine_ambiguous_position_reports_for_run(ncov_tools.out.qc_reports.collect())
+    
   }
 
 }

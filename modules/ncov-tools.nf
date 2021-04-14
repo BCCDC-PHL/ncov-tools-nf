@@ -243,7 +243,7 @@ process ncov_tools {
   path("lineages/${params.run_name}*_pangolin_version.txt"), emit: pangolin_version
   path("plots")
   path("qc_analysis")
-  path("qc_reports/*.tsv"), emit: qc_report
+  path("qc_reports/*.tsv"), emit: qc_reports
   path("qc_sequencing")
   path("qc_annotation")
 
@@ -312,7 +312,7 @@ process ncov_watch_summary {
   executor 'local'
 
   publishDir "${params.outdir}/by_plate/${library_plate_id}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_${watchlist_id}_ncov_watch_summary.tsv", enabled: params.split_by_plate
-  publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_${watchlist_id}_ncov_watch_summary.tsv"
+  publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_${watchlist_id}_ncov_watch_summary.tsv", enabled: !params.split_by_plate
 
   input:
   tuple val(library_plate_id), val(watchlist_id), val(watchlist_filename), path(watchlists_dir), path(ncov_watch_output), path(sample_ids)
@@ -382,6 +382,54 @@ process combine_all_qc_summaries_for_run {
   """
 }
 
+process combine_all_mixture_reports_for_run {
+
+  tag { params.run_name }
+
+  cpus 1
+
+  executor 'local'
+
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}_mixture_report.tsv"
+
+  input:
+  path(mixture_reports)
+
+  output:
+  path("${params.run_name}_mixture_report.tsv")
+
+  script:
+  """
+  head -qn 1 *_mixture_report.tsv | uniq > header.tsv
+  tail -qn+2 *_mixture_report.tsv | sort -k1,1 -k2,2 > data.tsv
+  cat header.tsv data.tsv > "${params.run_name}_mixture_report.tsv"
+  """
+}
+
+process combine_ambiguous_position_reports_for_run {
+
+  tag { params.run_name }
+
+  cpus 1
+
+  executor 'local'
+
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}_ambiguous_position_report.tsv"
+
+  input:
+  path(ambiguous_position_reports)
+
+  output:
+  path("${params.run_name}_ambiguous_position_report.tsv")
+
+  script:
+  """
+  head -qn 1 *_ambiguous_position_report.tsv | uniq > header.tsv
+  tail -qn+2 *_ambiguous_position_report.tsv | sort -k1,1 -k2,2 > data.tsv
+  cat header.tsv data.tsv > "${params.run_name}_ambiguous_position_report.tsv"
+  """
+}
+
 process combine_all_ncov_watch_summaries_for_run {
 
   tag { params.run_name }
@@ -403,6 +451,30 @@ process combine_all_ncov_watch_summaries_for_run {
   head -qn 1 *_summary.tsv | uniq > header.tsv
   tail -qn+2 *_summary.tsv | sort -k1,1 -k2,2 > data.tsv
   cat header.tsv data.tsv > "${params.run_name}_ncov_watch_summary.tsv"
+  """
+}
+
+process combine_all_ncov_watch_variants_for_run {
+
+  tag { params.run_name }
+
+  cpus 1
+
+  executor 'local'
+
+  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}_ncov_watch_variants.tsv"
+
+  input:
+  path(ncov_watch_variants)
+
+  output:
+  path("${params.run_name}_ncov_watch_variants.tsv")
+
+  script:
+  """
+  head -qn 1 *_variants.tsv | uniq > header.tsv
+  tail -qn+2 *_variants.tsv | sort -k1,1 -k4,4n > data.tsv
+  cat header.tsv data.tsv > "${params.run_name}_ncov_watch_variants.tsv"
   """
 }
 
