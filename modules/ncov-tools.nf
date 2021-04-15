@@ -117,15 +117,21 @@ process prepare_data_root {
   def metadata = metadata.name != 'NO_FILE' ? "cp ${metadata} ncov-tools-input" : ''
   def filename_glob = params.split_by_plate ? "*-${library_plate_id}-*" : "*"
   def link_downsampled_bams = params.downsampled ? "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_downsampleAmplicons/${filename_glob} ." : ''
+  def link_freebayes_consensus = params.freebayes_consensus ? "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callConsensusFreebayes/${filename_glob}.fa ." : ''
+  def link_ivar_consensus = params.freebayes_consensus ? '' : "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_makeConsensus/${filename_glob}.fa ."
+  def link_freebayes_variants = params.freebayes_variants ? "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callConsensusFreebayes/${filename_glob}.vcf ." : ''
+  def link_ivar_variants = params.freebayes_variants ? '' : "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callVariants/${filename_glob}.tsv ."
   """
   mkdir ncov-tools-input
   ${metadata}
   pushd ncov-tools-input
-  ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_makeConsensus/${filename_glob} .
+  ${link_ivar_consensus}
+  ${link_freebayes_consensus}
   ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_readMapping/${filename_glob} .
   ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_trimPrimerSequences/${filename_glob} .
   ${link_downsampled_bams}
-  ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callVariants/${filename_glob} .
+  ${link_ivar_variants}
+  ${link_freebayes_variants}
   ln -sfn ../${primer_scheme_dir}/nCoV-2019.reference.fasta .
   ln -sfn ../${primer_scheme_dir}/nCoV-2019.primer.bed .
   popd
@@ -183,6 +189,8 @@ process create_config_yaml {
   script:
   def metadata = metadata.name != 'NO_FILE' ? "metadata: \\\"{data_root}/metadata.tsv\\\"" : ''
   def bam_pattern = params.downsampled ? "{data_root}/{sample}.mapped.primertrimmed.downsampled.sorted.bam" : "{data_root}/{sample}.mapped.primertrimmed.sorted.bam"
+  def consensus_pattern = params.freebayes_consensus ? "{data_root}/{sample}.consensus.fa" : "{data_root}/{sample}.primertrimmed.consensus.fa"
+  def variants_pattern = params.freebayes_variants ? "{data_root}/{sample}.variants.norm.vcf" : "{data_root}/{sample}.variants.tsv"
   def run_name_with_plate = params.split_by_plate ? "${run_name}_${library_plate_id}" : "${run_name}"
   """
   echo "data_root: ncov-tools-input" >> config.yaml
@@ -192,8 +200,8 @@ process create_config_yaml {
   echo "reference_genome: \\"resources/nCoV-2019.reference.fasta\\"" >> config.yaml
   echo "primer_bed: \\"resources/nCoV-2019.primer.bed\\"" >> config.yaml
   echo "bam_pattern: \\"${bam_pattern}\\"" >> config.yaml
-  echo "consensus_pattern: \\"{data_root}/{sample}.primertrimmed.consensus.fa\\"" >> config.yaml
-  echo "variants_pattern: \\"{data_root}/{sample}.variants.tsv\\"" >> config.yaml
+  echo "consensus_pattern: \\"${consensus_pattern}\\"" >> config.yaml
+  echo "variants_pattern: \\"${variants_pattern}\\"" >> config.yaml
   echo "platform: illumina" >> config.yaml
   echo "bed_type: unique_amplicons" >> config.yaml
   echo "offset: 0" >> config.yaml
