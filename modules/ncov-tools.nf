@@ -120,7 +120,6 @@ process prepare_data_root {
   def link_freebayes_consensus = params.freebayes_consensus ? "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callConsensusFreebayes/${filename_glob}.fa ." : ''
   def link_ivar_consensus = params.freebayes_consensus ? '' : "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_makeConsensus/${filename_glob}.fa ."
   def link_freebayes_variants = params.freebayes_variants ? "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callConsensusFreebayes/${filename_glob}.vcf ." : ''
-  def link_ivar_variants = params.freebayes_variants ? '' : "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callVariants/${filename_glob}.tsv ."
   """
   mkdir ncov-tools-input
   ${metadata}
@@ -130,7 +129,7 @@ process prepare_data_root {
   ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_readMapping/${filename_glob} .
   ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_trimPrimerSequences/${filename_glob} .
   ${link_downsampled_bams}
-  ${link_ivar_variants}
+  ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callVariants/${filename_glob}.tsv .
   ${link_freebayes_variants}
   ln -sfn ../${primer_scheme_dir}/nCoV-2019.reference.fasta .
   ln -sfn ../${primer_scheme_dir}/nCoV-2019.primer.bed .
