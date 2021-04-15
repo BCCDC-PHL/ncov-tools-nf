@@ -21,6 +21,10 @@ nextflow run BCCDC-PHL/ncov-tools-nf \
   --artic_analysis_dir <output/from/ncov2019-artic-nf> \
   [--completeness_threshold <completeness_threshold>] \
   [--metadata <metadata.tsv>] \
+  [--downsampled] \
+  [--split_by_plate] \
+  [--freebayes_consensus] \
+  [--freebayes_variants] \
   --outdir <ncov-tools-output> \
 ```
 
