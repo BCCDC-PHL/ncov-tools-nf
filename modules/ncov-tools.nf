@@ -1,3 +1,18 @@
+process update_pangolin {
+  executor 'local'
+
+  input:
+  val(should_update)
+
+  output:
+  val(true)
+
+  script:
+  """
+  pangolin --update
+  """
+}
+
 process download_ncov_tools {
 
   tag { version }
@@ -241,7 +256,7 @@ process ncov_tools {
   publishDir "${params.outdir}", mode: 'copy', pattern: "qc_annotation", enabled: !params.split_by_plate
 
   input:
-  tuple val(library_plate_id), path(config_yaml), path(data_root), path(resources), path(ncov_tools)
+  tuple val(library_plate_id), path(config_yaml), path(data_root), path(resources), path(ncov_tools), val(pangolin_updated)
   
   output:
   path("config.yaml")

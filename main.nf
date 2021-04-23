@@ -2,6 +2,7 @@
 
 nextflow.enable.dsl=2
 
+include { update_pangolin } from './modules/ncov-tools.nf'
 include { download_ncov_tools } from './modules/ncov-tools.nf'
 include { download_artic_ncov2019 } from './modules/ncov-tools.nf'
 include { download_ncov_watchlists } from './modules/ncov-tools.nf'
@@ -25,7 +26,7 @@ include { combine_ambiguous_position_reports_for_run } from './modules/ncov-tool
 include { get_pangolin_version_for_run } from './modules/ncov-tools.nf'
 
 workflow {
-  
+
   ch_primer_scheme_version = Channel.of(params.primer_scheme_version)
   ch_primer_scheme_name = Channel.of('V1200')
   ch_ncov_tools_version = Channel.of(params.ncov_tools_version)
@@ -33,7 +34,8 @@ workflow {
   ch_run_name = Channel.of(params.run_name)
   ch_artic_analysis_dir = Channel.fromPath(params.artic_analysis_dir, type: 'dir')
   ch_metadata = Channel.fromPath(params.metadata, type: 'file')
-  
+
+  update_pangolin(Channel.value(true))
   download_ncov_tools(ch_ncov_tools_version)
   download_artic_ncov2019(ch_primer_scheme_version.combine(ch_primer_scheme_name))
   download_ncov_watchlists(ch_ncov_watchlists_version)
@@ -54,7 +56,7 @@ workflow {
   find_negative_control(prepare_data_root.out)
   create_config_yaml(ch_run_name.combine(ch_library_plate_ids).combine(find_negative_control.out).combine(ch_metadata))
 
-  ncov_tools(create_config_yaml.out.join(prepare_data_root.out).combine(index_reference_genome.out).combine(download_ncov_tools.out))
+  ncov_tools(create_config_yaml.out.join(prepare_data_root.out).combine(index_reference_genome.out).combine(download_ncov_tools.out).combine(update_pangolin.out))
 
   combine_ncov_watch_variants(ncov_watch.out.map{ it -> [it[0], it[4]] }.groupTuple())
   ncov_watch_summary(create_sample_id_list.out.cross(ncov_watch.out).map{ it -> it[1] + it[0][1].toString() })
