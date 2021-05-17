@@ -229,8 +229,6 @@ process create_config_yaml {
 process ncov_tools {
 
   tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
-  
-  cpus 14
 
   executor 'sge'
 
@@ -307,6 +305,7 @@ process combine_ncov_watch_variants {
   tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
 
   cpus 1
+
   executor 'local'
 
   publishDir "${params.outdir}/by_plate/${library_plate_id}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_variants.tsv", enabled: params.split_by_plate
