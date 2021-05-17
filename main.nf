@@ -54,7 +54,7 @@ workflow {
   
   create_sample_id_list(prepare_data_root.out)
   find_negative_control(prepare_data_root.out)
-  create_config_yaml(ch_run_name.combine(ch_library_plate_ids).combine(find_negative_control.out).combine(ch_metadata))
+  create_config_yaml(ch_library_plate_ids.join(find_negative_control.out).combine(ch_metadata))
 
   ncov_tools(create_config_yaml.out.join(prepare_data_root.out).combine(index_reference_genome.out).combine(download_ncov_tools.out).combine(update_pangolin.out))
 
