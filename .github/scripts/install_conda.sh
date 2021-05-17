@@ -15,3 +15,6 @@ wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.
 
 conda update -n base conda
 
+conda install mamba -n base -c conda-forge
+
+echo 'alias conda=mamba' >> ~/.bash_aliases
