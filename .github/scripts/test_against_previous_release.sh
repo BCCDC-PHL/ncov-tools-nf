@@ -7,9 +7,6 @@ export PATH=/opt/nextflow/bin:$PATH
 
 BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION="1.3.1"
 
-# Run 'hello world' pipeline to trigger nextflow dependency installation.
-# NXF_VER=20.10.0 nextflow -quiet run hello 2> /dev/null
-
 # write test log as github Action artifact
 echo Nextflow run BCCDC-PHL/ncov2019-artic-nf to generate input... >> artifacts/test_artifact.log
 NXF_VER=20.10.0 nextflow pull BCCDC-PHL/ncov2019-artic-nf -r v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION} 
