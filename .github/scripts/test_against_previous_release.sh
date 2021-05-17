@@ -14,6 +14,8 @@ BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION="1.3.1"
 echo Nextflow run BCCDC-PHL/ncov2019-artic-nf to generate input... >> artifacts/test_artifact.log
 NXF_VER=20.10.0 nextflow pull BCCDC-PHL/ncov2019-artic-nf -r v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION} 
 
+mkdir ncov2019-artic-nf-v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION}-output && pushd ncov2019-artic-nf-v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION}-output
+
 NXF_VER=20.10.0 nextflow -quiet run BCCDC-PHL/ncov2019-artic-nf \
        -r v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION} \
        -profile conda \
@@ -25,9 +27,12 @@ NXF_VER=20.10.0 nextflow -quiet run BCCDC-PHL/ncov2019-artic-nf \
        --gff $PWD/.github/data/refs/MN908947.3.gff \
        --composite_ref $PWD/.github/data/refs/mock_composite_ref/mock_composite_ref.fa \
        --illumina \
-       --prefix ncov2019-artic-nf-v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION}-output
+       --prefix test \
+       --outdir .
 
-mv .nextflow.log artifacts/ncov2019-artic-nf.nextflow.log
+mv .nextflow.log ../artifacts/ncov2019-artic-nf.nextflow.log
+
+popd
 
 echo Nextflow run this pull-request... >> artifacts/test_artifact.log
 NXF_VER=20.10.0 nextflow -quiet run main.nf \
@@ -44,7 +49,7 @@ mv .nextflow.log artifacts/pull_request.nextflow.log
 
 # run tests against previous previous_release to compare outputs 
 git clone https://github.com/BCCDC-PHL/ncov-tools-nf.git previous_release 
-cd previous_release
+pushd previous_release
 git checkout d51375ccc754865c073ccf74692b5a2828a8bbd5
 
 # the github runner only has 2 cpus available, so replace for that commit required:
@@ -63,7 +68,7 @@ NXF_VER=20.10.0 nextflow -quiet run main.nf \
 
 mv .nextflow.log ../artifacts/previous_release.nextflow.log
 
-cd ..
+popd
 
 # exclude files from comparison
 # and list differences
