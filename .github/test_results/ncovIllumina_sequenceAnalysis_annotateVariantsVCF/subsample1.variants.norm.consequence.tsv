@@ -1,4 +1,0 @@
-# This file was produced by: bcftools +csq(1.10.2+htslib-1.10.2)
-# The command line was:	bcftools +csq -f ref.fa -g MN908947.3.gff -Ot -o subsample1.variants.norm.consequence.tsv subsample1.variants.norm.vcf
-# LOG	[2]Message
-# CSQ	[2]Sample	[3]Haplotype	[4]Chromosome	[5]Position	[6]Consequence
