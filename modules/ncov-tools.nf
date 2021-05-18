@@ -180,11 +180,12 @@ process find_negative_control {
   tuple val(library_plate_id), path(data_root)
   
   output:
-  stdout
+  tuple val(library_plate_id), path("neg_control_sample_id.txt")
 
   script:
+  def filename_glob = params.split_by_plate ? "*-${library_plate_id}-*" : "*"
   """
-  find ${data_root}/ -type f -name 'NEG*.primertrimmed.consensus.fa' -printf "%f" | cut -d '.' -f 1 | tr -d \$'\n'
+  find ${data_root}/ -name NEG${filename_glob}.consensus.fa -printf "%f" | cut -d '.' -f 1 > neg_control_sample_id.txt
   """
 }
 
@@ -195,7 +196,7 @@ process create_config_yaml {
   executor 'local'
 
   input:
-  tuple val(run_name), val(library_plate_id), val(negative_control_sample), val(metadata)
+  tuple val(library_plate_id), path(negative_control_sample_id), val(metadata)
   
   output:
   tuple val(library_plate_id), path("config.yaml")
@@ -205,11 +206,11 @@ process create_config_yaml {
   def bam_pattern = params.downsampled ? "{data_root}/{sample}.mapped.primertrimmed.downsampled.sorted.bam" : "{data_root}/{sample}.mapped.primertrimmed.sorted.bam"
   def consensus_pattern = params.freebayes_consensus ? "{data_root}/{sample}.consensus.fa" : "{data_root}/{sample}.primertrimmed.consensus.fa"
   def variants_pattern = params.freebayes_variants ? "{data_root}/{sample}.variants.norm.vcf" : "{data_root}/{sample}.variants.tsv"
-  def run_name_with_plate = params.split_by_plate ? "${run_name}_${library_plate_id}" : "${run_name}"
+  def run_name_with_plate = params.split_by_plate ? "${params.run_name}_${library_plate_id}" : "${params.run_name}"
   """
   echo "data_root: ncov-tools-input" >> config.yaml
   echo "run_name: ${run_name_with_plate}" >> config.yaml
-  if [ "${negative_control_sample}" != "" ]; then echo "negative_control_samples: [ \\"${negative_control_sample}\\" ]" >> config.yaml; fi
+  if [[ \$( wc -l < ${negative_control_sample_id} ) -ge 1 ]]; then echo "negative_control_samples: [ \\"\$( cat ${negative_control_sample_id} )\\" ]" >> config.yaml; fi
   echo "${metadata}" >> config.yaml
   echo "reference_genome: \\"resources/nCoV-2019.reference.fasta\\"" >> config.yaml
   echo "primer_bed: \\"resources/nCoV-2019.primer.bed\\"" >> config.yaml
@@ -228,8 +229,6 @@ process create_config_yaml {
 process ncov_tools {
 
   tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
-  
-  cpus 14
 
   executor 'sge'
 
@@ -306,6 +305,7 @@ process combine_ncov_watch_variants {
   tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
 
   cpus 1
+
   executor 'local'
 
   publishDir "${params.outdir}/by_plate/${library_plate_id}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_variants.tsv", enabled: params.split_by_plate
@@ -331,6 +331,7 @@ process ncov_watch_summary {
   tag { params.split_by_plate ? params.run_name + " / " + library_plate_id + " / " + watchlist_id : params.run_name + " / " + watchlist_id }
 
   cpus 1
+
   executor 'local'
 
   publishDir "${params.outdir}/by_plate/${library_plate_id}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_${watchlist_id}_ncov_watch_summary.tsv", enabled: params.split_by_plate
