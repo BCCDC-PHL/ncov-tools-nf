@@ -51,6 +51,8 @@ git checkout d51375ccc754865c073ccf74692b5a2828a8bbd5
 
 # the github runner only has 2 cpus available, so replace for that commit required:
 sed -i s'/cpus = 14/cpus = 2/'g nextflow.config
+sed -i s'/--cores 14/--cores 2/'g modules/ncov-tools.nf
+sed -i s'/--cores 8/--cores 2/'g modules/ncov-tools.nf
 
 echo Nextflow run previous release >> ../artifacts/test_artifact.log
 NXF_VER=20.10.0 nextflow -quiet run main.nf \
