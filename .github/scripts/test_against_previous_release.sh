@@ -31,6 +31,11 @@ mv .nextflow.log ../artifacts/ncov2019-artic-nf.nextflow.log
 
 popd
 
+# the github runner only has 2 cpus available
+sed -i s'/cpus = 14/cpus = 2/'g nextflow.config
+sed -i s'/--cores 14/--cores 2/'g modules/ncov-tools.nf
+sed -i s'/--cores 8/--cores 2/'g modules/ncov-tools.nf
+
 echo Nextflow run this pull-request... >> artifacts/test_artifact.log
 NXF_VER=20.10.0 nextflow -quiet run main.nf \
        -profile conda \
@@ -49,7 +54,7 @@ git clone https://github.com/BCCDC-PHL/ncov-tools-nf.git previous_release
 pushd previous_release
 git checkout 75a41e7b239fb1f61ab2d1df6c70d35a09c5c745
 
-# the github runner only has 2 cpus available, so replace for that commit required:
+# the github runner only has 2 cpus available
 sed -i s'/cpus = 14/cpus = 2/'g nextflow.config
 sed -i s'/--cores 14/--cores 2/'g modules/ncov-tools.nf
 sed -i s'/--cores 8/--cores 2/'g modules/ncov-tools.nf
