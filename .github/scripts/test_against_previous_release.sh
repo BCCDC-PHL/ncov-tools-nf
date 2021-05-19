@@ -49,7 +49,7 @@ NXF_VER=20.10.0 nextflow -quiet run main.nf \
 
 mv .nextflow.log artifacts/pull_request.nextflow.log
 cp -r results artifacts/pull_request_results
-cp -r work ../artifacts/pull_request_work
+cp -r work artifacts/pull_request_work
 
 # run tests against previous previous_release to compare outputs 
 git clone https://github.com/BCCDC-PHL/ncov-tools-nf.git previous_release 
