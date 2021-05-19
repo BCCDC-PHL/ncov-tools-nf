@@ -32,6 +32,9 @@ jobs:
       run: bash .github/scripts/install_conda.sh
     - name: Install Nextflow
       run: bash .github/scripts/install_nextflow.sh
+    - name: Create Conda Environment
+      if: steps.cache-conda-env.outputs.cache-hit != 'true'
+      run: bash .github/scripts/create_conda_env.sh
     - name: Test against previous release
       run: bash .github/scripts/test_against_previous_release.sh
     - name: if failure, add latest NF log to artifacts
