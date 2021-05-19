@@ -230,12 +230,6 @@ process ncov_tools {
 
   tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
 
-  executor 'sge'
-
-  penv 'smp'
-
-  queue 'all.q'
-
   publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "config.yaml", enabled: params.split_by_plate
   publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "bed", enabled: params.split_by_plate
   publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "lineages/${params.run_name}*", enabled: params.split_by_plate
