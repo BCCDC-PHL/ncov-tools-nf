@@ -11,7 +11,7 @@ BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION="1.3.2"
 echo Nextflow run BCCDC-PHL/ncov2019-artic-nf to generate input... >> artifacts/test_artifact.log
 NXF_VER=20.10.0 nextflow pull BCCDC-PHL/ncov2019-artic-nf -r v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION} 
 
-mkdir ncov2019-artic-nf-v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION}-output && pushd ncov2019-artic-nf-v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION}-output
+mkdir test_input && pushd test_input
 
 NXF_VER=20.10.0 nextflow -quiet run BCCDC-PHL/ncov2019-artic-nf \
        -r v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION} \
@@ -25,9 +25,10 @@ NXF_VER=20.10.0 nextflow -quiet run BCCDC-PHL/ncov2019-artic-nf \
        --composite_ref $PWD/../.github/data/refs/mock_composite_ref/mock_composite_ref.fa \
        --illumina \
        --prefix test \
-       --outdir .
+       --outdir ncov2019-artic-nf-v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION}-output
 
 mv .nextflow.log ../artifacts/ncov2019-artic-nf.nextflow.log
+cp -r ncov2019-artic-nf-v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION}-output ../artifacts/
 
 popd
 
@@ -40,7 +41,7 @@ echo Nextflow run this pull-request... >> artifacts/test_artifact.log
 NXF_VER=20.10.0 nextflow -quiet run main.nf \
        -profile conda \
        --cache ~/.conda/envs \
-       --artic_analysis_dir $PWD/ncov2019-artic-nf-v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION}-output \
+       --artic_analysis_dir test_input/ncov2019-artic-nf-v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION}-output \
        --run_name test \
        --outdir results \
        --downsampled \
@@ -65,7 +66,7 @@ echo Nextflow run previous release >> ../artifacts/test_artifact.log
 NXF_VER=20.10.0 nextflow -quiet run main.nf \
        -profile conda \
        --cache ~/.conda/envs \
-       --artic_analysis_dir $PWD/../ncov2019-artic-nf-v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION}-output \
+       --artic_analysis_dir ../test_input/ncov2019-artic-nf-v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION}-output \
        --run_name test \
        --outdir results \
        --downsampled \
