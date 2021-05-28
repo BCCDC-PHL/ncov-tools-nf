@@ -13,20 +13,23 @@ A `metadata.tsv` file may be optionally provided. If it is provided, it should f
 
 The `completeness_threshold` can optionally be modified. Its default value is the same as that of `ncov-tools`, `0.75`.
 
+The `--update_pangolin` flag allows control over whether or not pangolin will be updated prior to running ncov-tools.
+
 In the command below, `[square brackets]` indicate optional parameters. `<angled brackets>` indicate a placeholder to be replaced by the user in a real pipeline invocation.
 
 ```
 nextflow run BCCDC-PHL/ncov-tools-nf \
   -profile conda \
   --cache ~/.conda/envs \
-  --run_name <run_name> \
-  --artic_analysis_dir <output/from/ncov2019-artic-nf> \
+  [--update_pangolin] \
   [--completeness_threshold <completeness_threshold>] \
   [--metadata <metadata.tsv>] \
   [--downsampled] \
   [--split_by_plate] \
   [--freebayes_consensus] \
   [--freebayes_variants] \
+  --run_name <run_name> \
+  --artic_analysis_dir <output/from/ncov2019-artic-nf> \
   --outdir <ncov-tools-output> \
 ```
 

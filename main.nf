@@ -35,7 +35,7 @@ workflow {
   ch_artic_analysis_dir = Channel.fromPath(params.artic_analysis_dir, type: 'dir')
   ch_metadata = Channel.fromPath(params.metadata, type: 'file')
 
-  update_pangolin(Channel.value(true))
+  update_pangolin(Channel.value(params.update_pangolin))
   download_ncov_tools(ch_ncov_tools_version)
   download_artic_ncov2019(ch_primer_scheme_version.combine(ch_primer_scheme_name))
   download_ncov_watchlists(ch_ncov_watchlists_version)
