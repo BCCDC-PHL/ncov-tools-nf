@@ -23,13 +23,16 @@ dependencies:
   - poppler
   - gofasta
   - numpy=1.19.1
-  - biopython=1.77
+  - biopython=1.74
   - snpeff=5.0-0
+  - pangolin=2.4.2
+  - pangolearn
   - pip:
       - dendropy>=4.4.0
       - pyvcf
       - ncov-parser
       - git+https://github.com/hCoV-2019/lineages.git
-      - git+https://github.com/hCoV-2019/pangolin.git
-      - git+https://github.com/cov-lineages/pangoLEARN.git
       - git+https://github.com/jts/ncov-watch.git
+      - git+https://github.com/cov-lineages/scorpio.git
+      - git+https://github.com/cov-lineages/constellations.git
+      

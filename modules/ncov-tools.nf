@@ -1,15 +1,24 @@
 process update_pangolin {
+
+  tag { should_update.toString() }
+
   executor 'local'
 
   input:
   val(should_update)
 
   output:
-  val(true)
+  val(did_update)
 
   script:
+  did_update = should_update
+  should_update_string = should_update ? "true" : "false"
   """
-  pangolin --update
+  should_update=${should_update_string}
+  if [ "\$should_update" = true ]
+  then
+    pangolin --update
+  fi
   """
 }
 
