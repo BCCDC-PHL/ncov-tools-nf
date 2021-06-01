@@ -47,7 +47,7 @@ mv .nextflow.log artifacts/pull_request.nextflow.log
 # run tests against previous previous_release to compare outputs 
 git clone https://github.com/BCCDC-PHL/ncov-tools-nf.git previous_release 
 pushd previous_release
-git checkout 831c4d373fca14f73fe50a03c6b89f6f624183f5
+git checkout 0a9d5e5c086682d16cf2b0413bfc3151da1a9043
 
 # the github runner only has 2 cpus available, so replace for that commit required:
 sed -i s'/cpus = 14/cpus = 2/'g nextflow.config
