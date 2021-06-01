@@ -9,6 +9,8 @@ This is a wrapper that helps to submit [ncov-tools](https://github.com/jts/ncov-
 This pipeline is intended to be run on the output of the [BCCDC-PHL/ncov2019-artic-nf](https://github.com/BCCDC-PHL/ncov2019-artic-nf) pipeline.
 The ncov2019-artic-nf output directory is passed as input to this pipeline using the `--artic_analysis_dir` flag.
 
+The default primer scheme is the [Freed *et al.*](https://academic.oup.com/biomethods/article/5/1/bpaa014/5873518) 1200bp scheme (aka. [`V1200`](https://github.com/BCCDC-PHL/artic-ncov2019/tree/master/primer_schemes/nCoV-2019/V1200)). Other primer schemes can be selected using the `--primer_scheme_name` flag. Valid primer scheme names correspond to directory names in our [primer scheme repository](https://github.com/BCCDC-PHL/artic-ncov2019/tree/master/primer_schemes/nCoV-2019).
+
 A `metadata.tsv` file may be optionally provided. If it is provided, it should follow the format as described in [the ncov-tools documentation](https://github.com/jts/ncov-tools#metadata-optional) 
 
 The `completeness_threshold` can optionally be modified. Its default value is the same as that of `ncov-tools`, `0.75`.
@@ -21,6 +23,7 @@ In the command below, `[square brackets]` indicate optional parameters. `<angled
 nextflow run BCCDC-PHL/ncov-tools-nf \
   -profile conda \
   --cache ~/.conda/envs \
+  [--primer_scheme_name <primer_scheme_name> ] \
   [--update_pangolin] \
   [--completeness_threshold <completeness_threshold>] \
   [--metadata <metadata.tsv>] \
