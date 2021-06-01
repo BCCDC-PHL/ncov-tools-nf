@@ -28,7 +28,7 @@ include { get_pangolin_version_for_run } from './modules/ncov-tools.nf'
 workflow {
 
   ch_primer_scheme_version = Channel.of(params.primer_scheme_version)
-  ch_primer_scheme_name = Channel.of('V1200')
+  ch_primer_scheme_name = Channel.of(params.primer_scheme_name)
   ch_ncov_tools_version = Channel.of(params.ncov_tools_version)
   ch_ncov_watchlists_version = Channel.of(params.ncov_watchlists_version)
   ch_run_name = Channel.of(params.run_name)
