@@ -26,7 +26,6 @@ dependencies:
   - biopython=1.74
   - snpeff=5.0-0
   - pangolin=2.4.2
-  - pangolearn
   - pip:
       - dendropy>=4.4.0
       - pyvcf
@@ -35,4 +34,5 @@ dependencies:
       - git+https://github.com/jts/ncov-watch.git
       - git+https://github.com/cov-lineages/scorpio.git
       - git+https://github.com/cov-lineages/constellations.git
+      - git+https://github.com/cov-lineages/pangoLearn.git
       
