@@ -403,7 +403,7 @@ process combine_all_qc_summaries_for_run {
   head -qn 1 *_summary_qc.tsv | uniq > header.tsv
   tail -qn+2 *_summary_qc.tsv | sort -k1,1 -k2,2 > data.tsv
   cat header.tsv data.tsv > "${params.run_name}_summary_qc_incorrect_run_name.tsv"
-  tail -qn+2 "${params.run_name}_summary_qc_incorrect_run_name.tsv" | awk -F '\t' 'BEGIN {OFS=FS}; {\$2 = substr(\$2, 1, length(\$2) - 4); print}' > data.tsv
+  tail -qn+2 "${params.run_name}_summary_qc_incorrect_run_name.tsv" | awk -F '\t' 'BEGIN {OFS=FS}; {split(\$2, run_id_split, "_"); \$2 = run_id_split[1]"_"run_id_split[2]"_"run_id_split[3]"_"run_id_split[4]; print}' > data.tsv
   cat header.tsv data.tsv > "${params.run_name}_summary_qc.tsv"
   """
 }
