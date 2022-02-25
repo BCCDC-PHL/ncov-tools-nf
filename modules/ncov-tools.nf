@@ -60,7 +60,7 @@ process download_artic_ncov2019 {
   tar -xzf v${version}.tar.gz
   mkdir resources
   cp artic-ncov2019-${version}/primer_schemes/nCoV-2019/${primer_scheme}/nCoV-2019.reference.fasta resources
-  cp artic-ncov2019-${version}/primer_schemes/nCoV-2019/${primer_scheme}/nCoV-2019.primer.bed resources
+  cp artic-ncov2019-${version}/primer_schemes/nCoV-2019/${primer_scheme}/nCoV-2019.bed resources
   """
 }
 
@@ -156,7 +156,7 @@ process prepare_data_root {
   ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callVariants/${filename_glob}.tsv .
   ${link_freebayes_variants}
   ln -sfn ../${primer_scheme_dir}/nCoV-2019.reference.fasta .
-  ln -sfn ../${primer_scheme_dir}/nCoV-2019.primer.bed .
+  ln -sfn ../${primer_scheme_dir}/nCoV-2019.bed .
   popd
   """
 }
@@ -222,7 +222,7 @@ process create_config_yaml {
   if [[ \$( wc -l < ${negative_control_sample_id} ) -ge 1 ]]; then echo "negative_control_samples: [ \\"\$( cat ${negative_control_sample_id} )\\" ]" >> config.yaml; fi
   echo "${metadata}" >> config.yaml
   echo "reference_genome: \\"resources/nCoV-2019.reference.fasta\\"" >> config.yaml
-  echo "primer_bed: \\"resources/nCoV-2019.primer.bed\\"" >> config.yaml
+  echo "primer_bed: \\"resources/nCoV-2019.bed\\"" >> config.yaml
   echo "bam_pattern: \\"${bam_pattern}\\"" >> config.yaml
   echo "consensus_pattern: \\"${consensus_pattern}\\"" >> config.yaml
   echo "variants_pattern: \\"${variants_pattern}\\"" >> config.yaml
