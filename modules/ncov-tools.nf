@@ -222,7 +222,7 @@ process create_config_yaml {
   if [[ \$( wc -l < ${negative_control_sample_id} ) -ge 1 ]]; then echo "negative_control_samples: [ \\"\$( cat ${negative_control_sample_id} )\\" ]" >> config.yaml; fi
   echo "${metadata}" >> config.yaml
   echo "reference_genome: \\"resources/nCoV-2019.reference.fasta\\"" >> config.yaml
-  echo "primer_\\"resources/nCoV-2019.bed\\"" >> config.yaml
+  echo "primer_bed: \\"resources/nCoV-2019.bed\\"" >> config.yaml
   echo "bam_pattern: \\"${bam_pattern}\\"" >> config.yaml
   echo "consensus_pattern: \\"${consensus_pattern}\\"" >> config.yaml
   echo "variants_pattern: \\"${variants_pattern}\\"" >> config.yaml
