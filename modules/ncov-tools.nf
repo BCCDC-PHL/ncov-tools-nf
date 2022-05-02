@@ -60,7 +60,7 @@ process download_artic_ncov2019 {
   tar -xzf v${version}.tar.gz
   mkdir resources
   cp artic-ncov2019-${version}/primer_schemes/nCoV-2019/${primer_scheme}/nCoV-2019.reference.fasta resources
-  cp artic-ncov2019-${version}/primer_schemes/nCoV-2019/${primer_scheme}/nCoV-2019.primer.bed resources
+  cp artic-ncov2019-${version}/primer_schemes/nCoV-2019/${primer_scheme}/nCoV-2019.bed resources
   """
 }
 
@@ -127,7 +127,7 @@ process get_library_plate_ids {
 
 process prepare_data_root {
 
-  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
+  tag { params.no_split_by_plate ? params.run_name : params.run_name + " / " + library_plate_id }
 
   executor 'local'
   
@@ -139,11 +139,11 @@ process prepare_data_root {
 
   script:
   def metadata = metadata.name != 'NO_FILE' ? "cp ${metadata} ncov-tools-input" : ''
-  def filename_glob = params.split_by_plate ? "*-${library_plate_id}-*" : "*"
-  def link_downsampled_bams = params.downsampled ? "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_downsampleAmplicons/${filename_glob} ." : ''
-  def link_freebayes_consensus = params.freebayes_consensus ? "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callConsensusFreebayes/${filename_glob}.fa ." : ''
-  def link_ivar_consensus = params.freebayes_consensus ? '' : "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_makeConsensus/${filename_glob}.fa ."
-  def link_freebayes_variants = params.freebayes_variants ? "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callConsensusFreebayes/${filename_glob}.vcf ." : ''
+  def filename_glob = params.no_split_by_plate ? "*" : "*-${library_plate_id}-*"
+  def link_pre_downsampled_bams = params.pre_downsampled ? "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_trimPrimerSequences/${filename_glob} ." : ''
+  def link_freebayes_consensus = params.ivar_consensus ? '' : "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callConsensusFreebayes/${filename_glob}.fa ."
+  def link_ivar_consensus = params.ivar_consensus ? "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_makeConsensus/${filename_glob}.fa ." : ''
+  def link_ivar_variants = params.ivar_variants ? "ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callVariants/${filename_glob}.tsv ." : ''
   """
   mkdir ncov-tools-input
   ${metadata}
@@ -151,19 +151,19 @@ process prepare_data_root {
   ${link_ivar_consensus}
   ${link_freebayes_consensus}
   ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_readMapping/${filename_glob} .
-  ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_trimPrimerSequences/${filename_glob} .
-  ${link_downsampled_bams}
-  ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callVariants/${filename_glob}.tsv .
-  ${link_freebayes_variants}
+  ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_downsampleAmplicons/${filename_glob} .
+  ${link_pre_downsampled_bams}
+  ln -sfn ../${ncov2019_artic_nf_analysis_dir}/ncovIllumina_sequenceAnalysis_callConsensusFreebayes/${filename_glob}.vcf .
+  ${link_ivar_variants}
   ln -sfn ../${primer_scheme_dir}/nCoV-2019.reference.fasta .
-  ln -sfn ../${primer_scheme_dir}/nCoV-2019.primer.bed .
+  ln -sfn ../${primer_scheme_dir}/nCoV-2019.bed .
   popd
   """
 }
 
 process create_sample_id_list {
 
-  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
+  tag { params.no_split_by_plate ? params.run_name : params.run_name + " / " + library_plate_id }
 
   executor 'local'
 
@@ -181,7 +181,7 @@ process create_sample_id_list {
 
 process find_negative_control {
 
-  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
+  tag { params.no_split_by_plate ? params.run_name : params.run_name + " / " + library_plate_id }
 
   executor 'local'
   
@@ -192,7 +192,7 @@ process find_negative_control {
   tuple val(library_plate_id), path("neg_control_sample_id.txt")
 
   script:
-  def filename_glob = params.split_by_plate ? "*-${library_plate_id}-*" : "*"
+  def filename_glob = params.no_split_by_plate ? "*": "*-${library_plate_id}-*"
   """
   find ${data_root}/ -name NEG${filename_glob}.consensus.fa -printf "%f" | cut -d '.' -f 1 > neg_control_sample_id.txt
   """
@@ -200,7 +200,7 @@ process find_negative_control {
 
 process create_config_yaml {
 
-  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
+  tag { params.no_split_by_plate ? params.run_name : params.run_name + " / " + library_plate_id }
 
   executor 'local'
 
@@ -212,18 +212,20 @@ process create_config_yaml {
 
   script:
   def metadata = metadata.name != 'NO_FILE' ? "metadata: \\\"{data_root}/metadata.tsv\\\"" : ''
-  def bam_pattern = params.downsampled ? "{data_root}/{sample}.mapped.primertrimmed.downsampled.sorted.bam" : "{data_root}/{sample}.mapped.primertrimmed.sorted.bam"
-  def consensus_pattern = params.freebayes_consensus ? "{data_root}/{sample}.consensus.fa" : "{data_root}/{sample}.primertrimmed.consensus.fa"
-  def variants_pattern = params.freebayes_variants ? "{data_root}/{sample}.variants.norm.vcf" : "{data_root}/{sample}.variants.tsv"
-  def run_name_with_plate = params.split_by_plate ? "${params.run_name}_${library_plate_id}" : "${params.run_name}"
+  def bam_pattern = params.pre_downsampled ? "{data_root}/{sample}.sorted.bam" : "{data_root}/{sample}.mapped.primertrimmed.downsampled.sorted.bam"
+  def primer_trimmed_bam_pattern = params.pre_downsampled ? "{data_root}/{sample}.mapped.primertrimmed.sorted.bam" : "{data_root}/{sample}.mapped.primertrimmed.downsampled.sorted.bam"
+  def consensus_pattern = params.ivar_consensus ? "{data_root}/{sample}.primertrimmed.consensus.fa" : "{data_root}/{sample}.consensus.fa"
+  def variants_pattern = params.ivar_variants ?  "{data_root}/{sample}.variants.tsv" : "{data_root}/{sample}.variants.norm.vcf"
+  def run_name_with_plate = params.no_split_by_plate ? "${params.run_name}" : "${params.run_name}_${library_plate_id}"
   """
   echo "data_root: ncov-tools-input" >> config.yaml
   echo "run_name: ${run_name_with_plate}" >> config.yaml
   if [[ \$( wc -l < ${negative_control_sample_id} ) -ge 1 ]]; then echo "negative_control_samples: [ \\"\$( cat ${negative_control_sample_id} )\\" ]" >> config.yaml; fi
   echo "${metadata}" >> config.yaml
   echo "reference_genome: \\"resources/nCoV-2019.reference.fasta\\"" >> config.yaml
-  echo "primer_bed: \\"resources/nCoV-2019.primer.bed\\"" >> config.yaml
+  echo "primer_bed: \\"resources/nCoV-2019.bed\\"" >> config.yaml
   echo "bam_pattern: \\"${bam_pattern}\\"" >> config.yaml
+  echo "primer_trimmed_bam_pattern: \\"${primer_trimmed_bam_pattern}\\"" >> config.yaml
   echo "consensus_pattern: \\"${consensus_pattern}\\"" >> config.yaml
   echo "variants_pattern: \\"${variants_pattern}\\"" >> config.yaml
   echo "platform: illumina" >> config.yaml
@@ -237,25 +239,25 @@ process create_config_yaml {
 
 process ncov_tools {
 
-  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
+  tag { params.no_split_by_plate ? params.run_name : params.run_name + " / " + library_plate_id }
 
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "config.yaml", enabled: params.split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "bed", enabled: params.split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "lineages/${params.run_name}*", enabled: params.split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "plots", enabled: params.split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_analysis", enabled: params.split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_reports/*.tsv", enabled: params.split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_sequencing", enabled: params.split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_annotation", enabled: params.split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "config.yaml", enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "bed", enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "lineages/${params.run_name}*", enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "plots", enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_analysis", enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_reports/*.tsv", enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_sequencing", enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_annotation", enabled: !params.no_split_by_plate
 
-  publishDir "${params.outdir}", mode: 'copy', pattern: "config.yaml", enabled: !params.split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "bed", enabled: !params.split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "lineages/${params.run_name}*", enabled: !params.split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "plots", enabled: !params.split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_analysis", enabled: !params.split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_reports/*.tsv", enabled: !params.split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_sequencing", enabled: !params.split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_annotation", enabled: !params.split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "config.yaml", enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "bed", enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "lineages/${params.run_name}*", enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "plots", enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_analysis", enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_reports/*.tsv", enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_sequencing", enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_annotation", enabled: params.no_split_by_plate
 
   input:
   tuple val(library_plate_id), path(config_yaml), path(data_root), path(resources), path(ncov_tools), val(pangolin_updated)
@@ -276,109 +278,6 @@ process ncov_tools {
   snakemake -s ./ncov-tools/workflow/Snakefile --cores ${task.cpus} all
   snakemake -s ./ncov-tools/workflow/Snakefile --cores 8 all_qc_annotation
   rm qc_reports/${params.run_name}_*ncov_watch_variants.tsv
-  """
-}
-
-process ncov_watch {
-
-  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id + " / " + mutation_set_id : params.run_name + " / " + mutation_set_id }
-  
-  cpus 1
-
-  executor 'local'
-
-  publishDir "${params.outdir}/by_plate/${library_plate_id}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_variants.tsv", enabled: params.split_by_plate
-  publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_variants.tsv", enabled: !params.split_by_plate
-
-  input:
-  tuple val(library_plate_id), path(data_root), val(mutation_set_id), val(watchlist_filename), path(watchlists_dir)
-  
-  output:
-  tuple val(library_plate_id), val(mutation_set_id), val(watchlist_filename), path(watchlists_dir), path("${params.run_name}_*_ncov_watch_variants.tsv")
-
-  script:
-  def variants_output_filename = params.split_by_plate == true ? "${params.run_name}_${library_plate_id}_${mutation_set_id}_ncov_watch_variants.tsv" : "${params.run_name}_${mutation_set_id}_ncov_watch_variants.tsv"
-  """
-  ncov-watch -d ${data_root} --mutation_set ${watchlists_dir}/${watchlist_filename} | sed 's/\\.variants\\.tsv//' > ${variants_output_filename} 2> /dev/null
-  """
-}
-
-process combine_ncov_watch_variants {
-
-  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
-
-  cpus 1
-
-  executor 'local'
-
-  publishDir "${params.outdir}/by_plate/${library_plate_id}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_variants.tsv", enabled: params.split_by_plate
-  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_variants.tsv", enabled: !params.split_by_plate
-
-  input:
-  tuple val(library_plate_id), path(variants)
-
-  output:
-  path("${params.run_name}*_ncov_watch_variants.tsv")
-
-  script:
-  def run_name_with_plate = params.split_by_plate ? "${params.run_name}_${library_plate_id}" : "${params.run_name}"
-  """
-  head -qn 1 *_variants.tsv | uniq > header.tsv
-  tail -qn+2 *_variants.tsv | sort -k1,1 -k4,4n | uniq > data.tsv
-  cat header.tsv data.tsv > ${run_name_with_plate}_ncov_watch_variants.tsv
-  """
-}
-
-process ncov_watch_summary {
-
-  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id + " / " + watchlist_id : params.run_name + " / " + watchlist_id }
-
-  cpus 1
-
-  executor 'local'
-
-  publishDir "${params.outdir}/by_plate/${library_plate_id}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_${watchlist_id}_ncov_watch_summary.tsv", enabled: params.split_by_plate
-  publishDir "${params.outdir}/ncov_watch", mode: 'copy', pattern: "${params.run_name}*_${watchlist_id}_ncov_watch_summary.tsv", enabled: !params.split_by_plate
-
-  input:
-  tuple val(library_plate_id), val(watchlist_id), val(watchlist_filename), path(watchlists_dir), path(ncov_watch_output), path(sample_ids)
-
-  output:
-  tuple val(library_plate_id), path("${params.run_name}*_${watchlist_id}_ncov_watch_summary.tsv")
-
-  script:
-  def ncov_watch_summary_filename = params.split_by_plate ? "${params.run_name}_${library_plate_id}_${watchlist_id}_ncov_watch_summary.tsv" : "${params.run_name}_${watchlist_id}_ncov_watch_summary.tsv"
-  """
-  ncov-watch-summary.py ${ncov_watch_output} --sample-ids ${sample_ids} --watchlist-id ${watchlist_id} --watchlist ${watchlists_dir}/${watchlist_filename} > ncov_watch_summary_tmp.tsv 2> /dev/null
-  head -n 1 ncov_watch_summary_tmp.tsv > header.tsv
-  tail -n+2 ncov_watch_summary_tmp.tsv | sort -b -k3,3rn -k1,1 > data_sorted.tsv
-  cat header.tsv data_sorted.tsv > ${ncov_watch_summary_filename}
-  """
-}
-
-process combine_ncov_watch_summaries {
-
-  tag { params.split_by_plate ? params.run_name + " / " + library_plate_id : params.run_name }
-
-  cpus 1
-
-  executor 'local'
-
-  publishDir "${params.outdir}/by_plate/${library_plate_id}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_summary.tsv", enabled: params.split_by_plate
-  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}*_ncov_watch_summary.tsv", enabled: !params.split_by_plate
-
-  input:
-  tuple val(library_plate_id), path(summaries)
-
-  output:
-  path("${params.run_name}*_ncov_watch_summary.tsv")
-
-  script:
-  def ncov_watch_summary_filename = params.split_by_plate ? "${params.run_name}_${library_plate_id}_ncov_watch_summary.tsv" : "${params.run_name}_ncov_watch_summary.tsv"
-  """
-  head -qn 1 *_summary.tsv | uniq > header.tsv
-  tail -qn+2 *_summary.tsv | sort -k1,1 -k2,2 > data.tsv
-  cat header.tsv data.tsv > ${ncov_watch_summary_filename}
   """
 }
 
