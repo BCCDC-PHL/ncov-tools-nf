@@ -64,27 +64,6 @@ process download_artic_ncov2019 {
   """
 }
 
-process download_ncov_watchlists {
-
-  tag { version }
-
-  executor 'local'
-  
-  input:
-  val(version)
-  
-  output:
-  tuple path("watchlists/watchlists.csv"), path("watchlists", type: 'dir')
-
-
-  script:
-  """
-  wget https://github.com/BCCDC-PHL/ncov-watchlists/archive/v${version}.tar.gz
-  tar -xzf v${version}.tar.gz
-  
-  cp -r ncov-watchlists-${version}/watchlists watchlists
-  """
-}
 
 process index_reference_genome {
 
@@ -241,23 +220,23 @@ process ncov_tools {
 
   tag { params.no_split_by_plate ? params.run_name : params.run_name + " / " + library_plate_id }
 
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "config.yaml", enabled: !params.no_split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "bed", enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "config.yaml",                  enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "bed",                          enabled: !params.no_split_by_plate
   publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "lineages/${params.run_name}*", enabled: !params.no_split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "plots", enabled: !params.no_split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_analysis", enabled: !params.no_split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_reports/*.tsv", enabled: !params.no_split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_sequencing", enabled: !params.no_split_by_plate
-  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_annotation", enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "plots",                        enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_analysis",                  enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_reports/*.tsv",             enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_sequencing",                enabled: !params.no_split_by_plate
+  publishDir "${params.outdir}/by_plate/${library_plate_id}", mode: 'copy', pattern: "qc_annotation",                enabled: !params.no_split_by_plate
 
-  publishDir "${params.outdir}", mode: 'copy', pattern: "config.yaml", enabled: params.no_split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "bed", enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "config.yaml",                  enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "bed",                          enabled: params.no_split_by_plate
   publishDir "${params.outdir}", mode: 'copy', pattern: "lineages/${params.run_name}*", enabled: params.no_split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "plots", enabled: params.no_split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_analysis", enabled: params.no_split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_reports/*.tsv", enabled: params.no_split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_sequencing", enabled: params.no_split_by_plate
-  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_annotation", enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "plots",                        enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_analysis",                  enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_reports/*.tsv",             enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_sequencing",                enabled: params.no_split_by_plate
+  publishDir "${params.outdir}", mode: 'copy', pattern: "qc_annotation",                enabled: params.no_split_by_plate
 
   input:
   tuple val(library_plate_id), path(config_yaml), path(data_root), path(resources), path(ncov_tools), val(pangolin_updated)
@@ -276,8 +255,7 @@ process ncov_tools {
   script:
   """
   snakemake -s ./ncov-tools/workflow/Snakefile --cores ${task.cpus} all
-  snakemake -s ./ncov-tools/workflow/Snakefile --cores 8 all_qc_annotation
-  rm qc_reports/${params.run_name}_*ncov_watch_variants.tsv
+  snakemake -s ./ncov-tools/workflow/Snakefile --cores ${task.cpus} all_qc_annotation
   """
 }
 
@@ -355,53 +333,6 @@ process combine_ambiguous_position_reports_for_run {
   """
 }
 
-process combine_all_ncov_watch_summaries_for_run {
-
-  tag { params.run_name }
-
-  cpus 1
-
-  executor 'local'
-
-  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}_ncov_watch_summary.tsv"
-
-  input:
-  path(ncov_watch_summaries)
-
-  output:
-  path("${params.run_name}_ncov_watch_summary.tsv")
-
-  script:
-  """
-  head -qn 1 *_summary.tsv | uniq > header.tsv
-  tail -qn+2 *_summary.tsv | sort -k1,1 -k2,2 > data.tsv
-  cat header.tsv data.tsv > "${params.run_name}_ncov_watch_summary.tsv"
-  """
-}
-
-process combine_all_ncov_watch_variants_for_run {
-
-  tag { params.run_name }
-
-  cpus 1
-
-  executor 'local'
-
-  publishDir "${params.outdir}/qc_reports", mode: 'copy', pattern: "${params.run_name}_ncov_watch_variants.tsv"
-
-  input:
-  path(ncov_watch_variants)
-
-  output:
-  path("${params.run_name}_ncov_watch_variants.tsv")
-
-  script:
-  """
-  head -qn 1 *_variants.tsv | uniq > header.tsv
-  tail -qn+2 *_variants.tsv | sort -k1,1 -k4,4n > data.tsv
-  cat header.tsv data.tsv > "${params.run_name}_ncov_watch_variants.tsv"
-  """
-}
 
 process combine_all_lineage_reports_for_run {
 
