@@ -5,7 +5,7 @@ set -eo pipefail
 export PATH=/opt/miniconda3/bin:$PATH
 export PATH=/opt/nextflow/bin:$PATH
 
-BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION="1.3.2"
+BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION="1.3.4"
 
 # write test log as github Action artifact
 echo Nextflow run BCCDC-PHL/ncov2019-artic-nf to generate input... >> artifacts/test_artifact.log
@@ -41,6 +41,7 @@ nextflow -quiet run main.nf \
 	 -profile conda \
 	 --cache ~/.conda/envs \
 	 --artic_analysis_dir test_input/ncov2019-artic-nf-v${BCCDC_NCOV2019_ARTIC_PIPELINE_VERSION}-output \
+	 --metadata .github/data/metadata/metadata.csv \
 	 --run_name test \
 	 --outdir results
 
