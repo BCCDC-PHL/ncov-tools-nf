@@ -1,8 +1,12 @@
 on:
   pull_request:
     branches:
-    - master
-name: Pull Request
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+name: Tests
 jobs:
   test:
     name: Run tests
@@ -13,7 +17,7 @@ jobs:
       run: mkdir artifacts
     - name: Cache Miniconda installation
       id: cache-miniconda
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       env:
         cache-name: cache-miniconda-installation
       with:
@@ -21,7 +25,7 @@ jobs:
         key: ${{ runner.os }}-build-${{ env.cache-name }}-miniconda3
     - name: Cache conda environment
       id: cache-conda-env
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       env:
         cache-name: cache-conda-env
       with:
@@ -35,12 +39,12 @@ jobs:
     - name: Create Conda Environment
       if: steps.cache-conda-env.outputs.cache-hit != 'true'
       run: bash .github/scripts/create_conda_env.sh
-    - name: Test against previous release
-      run: bash .github/scripts/test_against_previous_release.sh
+    - name: Run Pipeline
+      run: bash .github/scripts/run_pipeline.sh
     - name: if failure, add latest NF log to artifacts
       run: mv .nextflow.log artifacts/failure.nextflow.log && mv work artifacts/work_failed
       if: failure()
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test_artifacts
