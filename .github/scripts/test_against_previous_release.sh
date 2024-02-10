@@ -55,7 +55,8 @@ cp -r work artifacts/pull_request_work
 # run tests against previous previous_release to compare outputs 
 git clone https://github.com/BCCDC-PHL/ncov-tools-nf.git previous_release 
 pushd previous_release
-git checkout 75a41e7b239fb1f61ab2d1df6c70d35a09c5c745
+
+git checkout 0a9d5e5c086682d16cf2b0413bfc3151da1a9043
 
 # the github runner only has 2 cpus available
 sed -i s'/cpus = 14/cpus = 2/'g nextflow.config
