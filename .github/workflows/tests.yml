@@ -9,6 +9,10 @@ on:
 name: Tests
 jobs:
   test:
+    strategy:
+      fail-fast: false
+      matrix:
+        nextflow_version: ["21.04.3", "23.10.1"]
     name: Run tests
     runs-on: ubuntu-latest
     steps:
@@ -35,6 +39,8 @@ jobs:
       if: steps.cache-miniconda.outputs.cache-hit != 'true'
       run: bash .github/scripts/install_conda.sh
     - name: Install Nextflow
+      env:
+        NXF_VER: ${{ matrix.nextflow_version }}
       run: bash .github/scripts/install_nextflow.sh
     - name: Create Conda Environment
       if: steps.cache-conda-env.outputs.cache-hit != 'true'
@@ -47,5 +53,5 @@ jobs:
     - uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: test_artifacts
+        name: artifacts-BCCDC-PHL-ncov-tools-nf-nextflow-v${{ matrix.nextflow_version }}-${{ github.run_id }}.${{ github.run_attempt }}
         path: artifacts
