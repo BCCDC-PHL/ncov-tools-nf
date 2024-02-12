@@ -34,7 +34,7 @@ jobs:
         cache-name: cache-conda-env
       with:
         path: ~/.conda/envs
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('environments') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('environments') }}-x
     - name: Install Miniconda
       if: steps.cache-miniconda.outputs.cache-hit != 'true'
       run: bash .github/scripts/install_conda.sh
