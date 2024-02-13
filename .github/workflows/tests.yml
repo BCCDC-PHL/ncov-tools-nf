@@ -1,0 +1,61 @@
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+name: Tests
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        nextflow_version: ["21.04.3", "23.10.1"]
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: create artifacts dir to save test logs
+      run: mkdir artifacts
+    - name: Cache Miniconda installation
+      id: cache-miniconda
+      uses: actions/cache@v4
+      env:
+        cache-name: cache-miniconda-installation
+      with:
+        path: /opt/miniconda3
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-miniconda3
+    - name: Cache conda environment
+      id: cache-conda-env
+      uses: actions/cache@v4
+      env:
+        cache-name: cache-conda-env
+      with:
+        path: ~/.conda/envs
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('environments') }}
+    - name: Install Miniconda
+      if: steps.cache-miniconda.outputs.cache-hit != 'true'
+      run: bash .github/scripts/install_conda.sh
+    - name: Install Nextflow
+      env:
+        NXF_VER: ${{ matrix.nextflow_version }}
+      run: bash .github/scripts/install_nextflow.sh
+    - name: Create Conda Environments
+      if: steps.cache-conda-env.outputs.cache-hit != 'true'
+      run: bash .github/scripts/create_conda_env.sh
+    - name: Generate Inputs
+      run: bash .github/scripts/generate_inputs.sh
+    - name: Run Pipeline
+      run: bash .github/scripts/run_pipeline.sh
+    - name: Check Outputs
+      run: bash .github/scripts/check_outputs.sh
+    - name: if failure, add latest NF log to artifacts
+      run: mv .nextflow.log artifacts/failure.nextflow.log && mv work artifacts/work_failed
+      if: failure()
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: artifacts-BCCDC-PHL-ncov-tools-nf-nextflow-v${{ matrix.nextflow_version }}-${{ github.run_id }}.${{ github.run_attempt }}
+        path: artifacts
