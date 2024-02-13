@@ -49,6 +49,8 @@ jobs:
       run: bash .github/scripts/generate_inputs.sh
     - name: Run Pipeline
       run: bash .github/scripts/run_pipeline.sh
+    - name: Check Outputs
+      run: bash .github/scripts/check_outputs.sh
     - name: if failure, add latest NF log to artifacts
       run: mv .nextflow.log artifacts/failure.nextflow.log && mv work artifacts/work_failed
       if: failure()
