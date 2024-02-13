@@ -19,7 +19,8 @@ nextflow run main.nf \
 	 --run_name test \
 	 --outdir results \
 	 -resume \
-	 -with-trace ncov-tools-nf_trace.tsv
+	 -with-trace ncov-tools-nf_trace.tsv \
+	 -with-report ncov-tools-nf_report.html
 
 mv .nextflow.log artifacts/nextflow.log
 cp -r results artifacts/results

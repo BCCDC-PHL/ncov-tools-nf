@@ -2,3 +2,7 @@
 work
 test_input
 test_output
+results
+artifacts
+ncov-tools-nf_report.html*
+ncov-tools-nf_trace.tsv*
