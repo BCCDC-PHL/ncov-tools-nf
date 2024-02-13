@@ -23,5 +23,7 @@ nextflow run main.nf \
 	 -with-report ncov-tools-nf_report.html
 
 mv .nextflow.log artifacts/nextflow.log
+mv ncov-tools-nf_trace.tsv artifacts/ncov-tools-nf_trace.tsv
+mv ncov-tools-nf_report.html artifacts/ncov-tools-nf_report.html
 cp -r results artifacts/results
 cp -r work artifacts/work
