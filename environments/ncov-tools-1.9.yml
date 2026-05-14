@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - snakemake>=8.0.0
+  - snakemake
   - mafft
   - augur
   - pysam
