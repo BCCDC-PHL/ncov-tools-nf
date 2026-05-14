@@ -39,11 +39,6 @@ process download_ncov_tools {
   wget https://github.com/BCCDC-PHL/ncov-tools/archive/v${version}.tar.gz
   tar -xzf v${version}.tar.gz
   mv ncov-tools-${version} ncov-tools
-
-  # temporary work around for deprecation of srcdir() in snakemake > v8.0
-  # may be best to fix in forked BCCDC-PHL/ncov-tools + jts/ncov-tools
-  cd ncov-tools/workflow
-  sed -i 's/srcdir(/workflow.source_path(/g' Snakefile rules/*.smk
   """
 }
 
